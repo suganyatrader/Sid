@@ -1,0 +1,14 @@
+[
+  {
+    "stock_id": "RELIANCE",
+    "symbol": "RELIANCE",
+    "sector": "Energy",
+    "liquidity_score": 0.95
+  },
+  {
+    "stock_id": "TCS",
+    "symbol": "TCS",
+    "sector": "IT",
+    "liquidity_score": 0.88
+  }
+]
