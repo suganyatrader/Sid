@@ -2,12 +2,14 @@ import argparse
 import csv
 import datetime
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
+import urllib.error
+import urllib.request
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
-LIVE_QUOTES_FILE = DATA_DIR / 'live_quotes.json'
 TRADE_LOG_FILE = DATA_DIR / 'trade_logs.csv'
 
 
@@ -33,20 +35,34 @@ def load_stock_identifiers(path: Optional[Path] = None) -> Dict[str, Dict[str, A
     return {str(item['stock_id']): item for item in payload if isinstance(item, dict)}
 
 
-def load_live_quotes(path: Optional[Path] = None) -> Dict[str, Dict[str, Any]]:
-    target = path or LIVE_QUOTES_FILE
-    if not target.exists():
+def fetch_live_quotes(stock_ids: Optional[list[str]] = None) -> Dict[str, Dict[str, Any]]:
+    ids = stock_ids or []
+    if not ids:
         return {}
-    with target.open('r', encoding='utf-8') as handle:
-        payload = json.load(handle)
 
-    if isinstance(payload, dict):
-        return {str(stock_id): quote for stock_id, quote in payload.items()}
+    api_key = os.getenv('GROWW_API_KEY')
+    if not api_key:
+        print('[scanner] GROWW_API_KEY not configured; skipping live quote fetch.')
+        return {}
 
-    if isinstance(payload, list):
-        return {str(item.get('stock_id') or item.get('symbol') or idx): item for idx, item in enumerate(payload)}
+    base_url = os.getenv('GROWW_BASE_URL') or 'https://api.groww.in/v1/trading'
+    quotes: Dict[str, Dict[str, Any]] = {}
 
-    return {}
+    for stock_id in ids:
+        try:
+            url = f'{base_url}/market/quote/{stock_id}'
+            request = urllib.request.Request(
+                url,
+                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            )
+            with urllib.request.urlopen(request, timeout=10) as response:
+                payload = json.load(response)
+            quotes[stock_id] = {'fetchedAt': datetime.datetime.now().isoformat(), 'quote': payload}
+            print(f'[scanner] Fetched {stock_id} from live source')
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as exc:
+            print(f'[scanner] Failed to fetch {stock_id}: {exc}')
+
+    return quotes
 
 
 def detect_momentum(stock_id: str, quote: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -105,15 +121,16 @@ def append_trade_log(stock_id: str, action: str, price: float, volume: int, pnl:
 
 def run_scanner(
     stock_identifiers_path: Optional[Path] = None,
-    live_quotes_path: Optional[Path] = None,
     trade_log_path: Optional[Path] = None,
     simulate: bool = True,
+    live_quotes: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> int:
     stock_identifiers = load_stock_identifiers(stock_identifiers_path)
-    live_quotes = load_live_quotes(live_quotes_path)
+    if live_quotes is None:
+        live_quotes = fetch_live_quotes(list(stock_identifiers.keys()))
 
     if not live_quotes:
-        print('[scanner] No live quotes available. Run ingestion first.')
+        print('[scanner] No live quotes available. Check credentials or network access.')
         return 0
 
     for stock_id, payload in live_quotes.items():
@@ -146,7 +163,6 @@ def run_scanner(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Scan live quotes for intraday momentum opportunities')
     parser.add_argument('--stock-identifiers-file', type=Path, default=STOCK_IDENTIFIERS_FILE)
-    parser.add_argument('--live-quotes-file', type=Path, default=LIVE_QUOTES_FILE)
     parser.add_argument('--trade-log-file', type=Path, default=TRADE_LOG_FILE)
     parser.add_argument('--no-simulate', action='store_true', help='Analyze signals without writing trade logs')
     return parser
@@ -157,7 +173,6 @@ def main() -> int:
     args = parser.parse_args()
     return run_scanner(
         stock_identifiers_path=args.stock_identifiers_file,
-        live_quotes_path=args.live_quotes_file,
         trade_log_path=args.trade_log_file,
         simulate=not args.no_simulate,
     )
