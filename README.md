@@ -1,34 +1,16 @@
 # Intraday Momentum Trading Utility
 
-A hybrid monorepo for intraday momentum scanning with:
+A single repo for intraday momentum scanning with a Python-first Groww SDK flow.
 
-- `ingestion/` — Node.js Groww data ingestion and quote collector.
-- `scanner/` — Python momentum scanner, virtual trading engine, and CLI.
+- `scanner/` — Python momentum scanner, Groww SDK-based live quote collector, virtual trading engine, and CLI.
 - `data/` — File-based persistence using JSON and CSV.
 
 ## Architecture
 
-- `ingestion/`: Fetches live stock quotes from Groww API and writes them to `data/live_quotes.json`.
-- `scanner/`: Loads shared data, detects momentum signals, and simulates trades into `data/trade_logs.csv`.
+- `scanner/`: Fetches live stock quotes with `growwapi`, detects momentum signals, and simulates trades into `data/trade_logs.csv`.
+- `data/`: File-based persistence using JSON and CSV.
 
 ## Setup
-
-### Node.js ingestion
-
-1. Navigate to `ingestion/`
-2. Create a `.env` file from `.env.example`
-3. Install dependencies:
-
-```bash
-cd ingestion
-npm install
-```
-
-4. Run ingestion:
-
-```bash
-npm run ingest
-```
 
 ### Python scanner
 
@@ -40,12 +22,26 @@ cd scanner
 python -m pip install -r requirements.txt
 ```
 
-3. Run the scanner:
+3. Configure Groww credentials in your environment:
 
 ```bash
-python scanner.py --run
+set GROWW_API_KEY=your_api_key
+set GROWW_API_SECRET=your_api_secret
 ```
 
+If you already have an access token, use:
+
+```bash
+set GROWW_ACCESS_TOKEN=your_access_token
+```
+
+4. Run the scanner:
+
+```bash
+python scanner.py
+```
+
+> Note: The Node.js ingestion layer is now optional and is retained only as a legacy alternate collector.
 ## Data files
 
 - `data/stock_identifiers.json`: stock identifiers used by both layers.

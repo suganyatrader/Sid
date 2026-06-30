@@ -5,8 +5,8 @@ import json
 import os
 from pathlib import Path
 from typing import Any, Dict, Optional
-import urllib.error
-import urllib.request
+
+from growwapi import GrowwAPI
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
@@ -40,40 +40,62 @@ def fetch_live_quotes(stock_ids: Optional[list[str]] = None) -> Dict[str, Dict[s
     if not ids:
         return {}
 
+    access_token = os.getenv('GROWW_ACCESS_TOKEN')
     api_key = os.getenv('GROWW_API_KEY')
-    if not api_key:
-        print('[scanner] GROWW_API_KEY not configured; skipping live quote fetch.')
+    secret = os.getenv('GROWW_API_SECRET')
+
+    if not access_token:
+        if not api_key or not secret:
+            print('[scanner] GROWW_ACCESS_TOKEN or GROWW_API_KEY/GROWW_API_SECRET not configured; skipping live quote fetch.')
+            return {}
+        try:
+            access_token = GrowwAPI.get_access_token(api_key=api_key, secret=secret)
+        except Exception as exc:
+            print(f'[scanner] Failed to get Groww access token: {exc}')
+            return {}
+
+    try:
+        groww = GrowwAPI(access_token)
+    except Exception as exc:
+        print(f'[scanner] Failed to initialize GrowwAPI client: {exc}')
         return {}
 
-    base_url = os.getenv('GROWW_BASE_URL') or 'https://api.groww.in/v1/trading'
     quotes: Dict[str, Dict[str, Any]] = {}
 
     for stock_id in ids:
         try:
-            url = f'{base_url}/market/quote/{stock_id}'
-            request = urllib.request.Request(
-                url,
-                headers={'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'},
+            quote = groww.get_quote(
+                exchange=groww.EXCHANGE_NSE,
+                segment=groww.SEGMENT_CASH,
+                trading_symbol=stock_id,
             )
-            with urllib.request.urlopen(request, timeout=10) as response:
-                payload = json.load(response)
-            quotes[stock_id] = {'fetchedAt': datetime.datetime.now().isoformat(), 'quote': payload}
-            print(f'[scanner] Fetched {stock_id} from live source')
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError) as exc:
+            quotes[stock_id] = {'fetchedAt': datetime.datetime.now().isoformat(), 'quote': quote}
+            print(f'[scanner] Fetched {stock_id} from Groww SDK')
+        except Exception as exc:
             print(f'[scanner] Failed to fetch {stock_id}: {exc}')
 
     return quotes
 
 
 def detect_momentum(stock_id: str, quote: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    price = _to_number(quote.get('ltp'))
+    price = _to_number(
+        quote.get('ltp') or quote.get('last_price') or quote.get('price') or quote.get('close')
+    )
     if price is None:
         return None
 
-    previous_close = _to_number(quote.get('previous_close') or quote.get('pc') or 0) or 0.0
-    volume = _to_number(quote.get('volume') or quote.get('total_traded_volume') or 0) or 0.0
-    vwap = _to_number(quote.get('vwap') or quote.get('vw'))
-    previous_volume = _to_number(quote.get('previous_volume') or quote.get('avg_volume') or 0) or 0.0
+    previous_close = _to_number(
+        quote.get('previous_close') or quote.get('pc') or quote.get('close') or 0
+    ) or 0.0
+    volume = _to_number(
+        quote.get('volume') or quote.get('total_traded_volume') or quote.get('total_volume') or 0
+    ) or 0.0
+    vwap = _to_number(
+        quote.get('vwap') or quote.get('vw') or quote.get('average_price')
+    )
+    previous_volume = _to_number(
+        quote.get('previous_volume') or quote.get('avg_volume') or 0
+    ) or 0.0
 
     signals = []
     if previous_close and price > previous_close * 1.01:
