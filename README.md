@@ -49,7 +49,29 @@ Or `scanner/.env`:
 ```ini
 GROWW_ACCESS_TOKEN=your_access_token
 ```
+If you have a valid access token, configure it in `scanner/.env` or the environment:
 
+```ini
+GROWW_ACCESS_TOKEN=your_access_token
+```
+
+This is the simplest option and is used immediately by the scanner.
+
+If you prefer TOTP auth instead, one of these is also supported:
+
+```ini
+GROWW_API_KEY=your_api_key
+GROWW_TOTP_SECRET=your_totp_secret
+```
+
+When `GROWW_TOTP_SECRET` is present, the scanner generates a fresh one-time code automatically.
+
+If you cannot use a secret, you may supply a current TOTP value directly:
+
+```ini
+GROWW_API_KEY=your_api_key
+GROWW_TOTP_TOKEN=123456
+```
 > Note: The current scanner uses `data/stock_identifiers.json` for stock symbols. `STOCK_IDS` and `GROWW_BASE_URL` in `.env` are not used by the current scanner flow.4. Run the scanner:
 
 ```bash
