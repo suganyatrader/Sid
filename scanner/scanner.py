@@ -8,6 +8,8 @@ from typing import Any, Dict, Optional
 
 from growwapi import GrowwAPI
 
+from groww_config import GrowwConfig
+
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
 TRADE_LOG_FILE = DATA_DIR / 'trade_logs.csv'
@@ -40,19 +42,15 @@ def fetch_live_quotes(stock_ids: Optional[list[str]] = None) -> Dict[str, Dict[s
     if not ids:
         return {}
 
-    access_token = os.getenv('GROWW_ACCESS_TOKEN')
-    api_key = os.getenv('GROWW_API_KEY')
-    secret = os.getenv('GROWW_API_SECRET')
-
-    if not access_token:
-        if not api_key or not secret:
-            print('[scanner] GROWW_ACCESS_TOKEN or GROWW_API_KEY/GROWW_API_SECRET not configured; skipping live quote fetch.')
-            return {}
-        try:
-            access_token = GrowwAPI.get_access_token(api_key=api_key, secret=secret)
-        except Exception as exc:
-            print(f'[scanner] Failed to get Groww access token: {exc}')
-            return {}
+    config = GrowwConfig.from_env()
+    try:
+        access_token = config.get_access_token()
+    except ValueError as exc:
+        print(f'[scanner] {exc}')
+        return {}
+    except Exception as exc:
+        print(f'[scanner] Failed to obtain Groww access token: {exc}')
+        return {}
 
     try:
         groww = GrowwAPI(access_token)

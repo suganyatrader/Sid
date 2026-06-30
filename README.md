@@ -22,12 +22,21 @@ cd scanner
 python -m pip install -r requirements.txt
 ```
 
-3. Configure Groww credentials in your environment:
+3. Configure Groww credentials in your environment, or use a `.env` file in `scanner/`:
 
 ```bash
 set GROWW_API_KEY=your_api_key
 set GROWW_API_SECRET=your_api_secret
 ```
+
+Or create `scanner/.env` with:
+
+```ini
+GROWW_API_KEY=your_api_key
+GROWW_API_SECRET=your_api_secret
+```
+
+The scanner now automatically loads `scanner/.env` even when run from the repository root.
 
 If you already have an access token, use:
 
@@ -35,7 +44,13 @@ If you already have an access token, use:
 set GROWW_ACCESS_TOKEN=your_access_token
 ```
 
-4. Run the scanner:
+Or `scanner/.env`:
+
+```ini
+GROWW_ACCESS_TOKEN=your_access_token
+```
+
+> Note: The current scanner uses `data/stock_identifiers.json` for stock symbols. `STOCK_IDS` and `GROWW_BASE_URL` in `.env` are not used by the current scanner flow.4. Run the scanner:
 
 ```bash
 python scanner.py
