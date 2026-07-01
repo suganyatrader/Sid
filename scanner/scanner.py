@@ -96,24 +96,46 @@ def fetch_live_quotes(stock_ids: Optional[list[str]] = None, max_workers: int = 
     return quotes
 
 
+def _extract_quote_value(quote: Optional[Dict[str, Any]], *candidate_keys: str) -> Optional[Any]:
+    if not isinstance(quote, dict):
+        return None
+
+    for key in candidate_keys:
+        if not key:
+            continue
+        value = quote.get(key)
+        if value in (None, '', 'None'):
+            continue
+        return value
+
+    for nested_key in ('last_quote', 'quote', 'ohlc', 'market'):
+        nested_value = quote.get(nested_key)
+        if isinstance(nested_value, dict):
+            nested_result = _extract_quote_value(nested_value, *candidate_keys)
+            if nested_result not in (None, '', 'None'):
+                return nested_result
+
+    return None
+
+
 def detect_momentum(stock_id: str, quote: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     price = _to_number(
-        quote.get('ltp') or quote.get('last_price') or quote.get('price') or quote.get('close')
+        _extract_quote_value(quote, 'ltp', 'last_price', 'price', 'close')
     )
     if price is None:
         return None
 
     previous_close = _to_number(
-        quote.get('previous_close') or quote.get('pc') or quote.get('close') or 0
+        _extract_quote_value(quote, 'previous_close', 'pc', 'prev_close', 'close')
     ) or 0.0
     volume = _to_number(
-        quote.get('volume') or quote.get('total_traded_volume') or quote.get('total_volume') or 0
+        _extract_quote_value(quote, 'volume', 'total_traded_volume', 'total_volume')
     ) or 0.0
     vwap = _to_number(
-        quote.get('vwap') or quote.get('vw') or quote.get('average_price')
+        _extract_quote_value(quote, 'vwap', 'vw', 'average_price')
     )
     previous_volume = _to_number(
-        quote.get('previous_volume') or quote.get('avg_volume') or 0
+        _extract_quote_value(quote, 'previous_volume', 'avg_volume')
     ) or 0.0
 
     signals = []
@@ -203,12 +225,18 @@ def run_scanner(
 
     ranked_results = []
     for stock_id, payload in live_quotes.items():
+        metadata = stock_identifiers.get(stock_id, {})
         quote = payload.get('quote') if isinstance(payload, dict) and isinstance(payload.get('quote'), dict) else payload
+        if not isinstance(quote, dict):
+            quote = metadata.get('last_quote') or {}
+
+        if not isinstance(quote, dict):
+            continue
+
         result = detect_momentum(stock_id, quote)
         if not result:
             continue
 
-        metadata = stock_identifiers.get(stock_id, {})
         name = metadata.get('symbol', stock_id)
         signals = result['signals']
         if not signals:
@@ -233,6 +261,10 @@ def run_scanner(
         })
 
     ranked_results.sort(key=lambda entry: entry['priority_score'], reverse=True)
+
+    if not ranked_results:
+        print('[scanner] No momentum candidates matched the current quotes.')
+        return 0
 
     for rank, entry in enumerate(ranked_results[:max(1, top_n)], start=1):
         result = entry['result']
