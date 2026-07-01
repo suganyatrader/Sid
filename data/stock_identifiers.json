@@ -3,12 +3,194 @@
     "stock_id": "RELIANCE",
     "symbol": "RELIANCE",
     "sector": "Energy",
-    "liquidity_score": 0.95
+    "liquidity_score": 0.95,
+    "groww_symbol": "NSE-RELIANCE",
+    "exchange": "NSE",
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -7.099999999999909,
+      "day_change_perc": -0.5457340507302005,
+      "upper_circuit_limit": 1431.1,
+      "lower_circuit_limit": 1170.9,
+      "ohlc": {
+        "open": 1306.9,
+        "high": 1306.9,
+        "low": 1290.0,
+        "close": 1301.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 1293.9,
+            "quantity": 74764,
+            "orderCount": 63
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          }
+        ],
+        "sell": [
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 25,
+      "last_trade_time": 1782815374,
+      "low_trade_range": null,
+      "last_price": 1293.9,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 74764,
+      "total_sell_quantity": 0,
+      "volume": 15695263,
+      "week_52_high": 1611.8,
+      "week_52_low": 1253.2
+    }
   },
   {
     "stock_id": "TCS",
     "symbol": "TCS",
     "sector": "IT",
-    "liquidity_score": 0.88
+    "liquidity_score": 0.88,
+    "groww_symbol": "NSE-TCS",
+    "exchange": "NSE",
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -66.40000000000009,
+      "day_change_perc": -3.1650698317365027,
+      "upper_circuit_limit": 2307.6,
+      "lower_circuit_limit": 1888.2,
+      "ohlc": {
+        "open": 2090.0,
+        "high": 2104.3,
+        "low": 2018.8,
+        "close": 2097.9
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 2031.5,
+            "quantity": 969,
+            "orderCount": 39
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          }
+        ],
+        "sell": [
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          },
+          {
+            "price": 0.0,
+            "quantity": 0,
+            "orderCount": 0
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 175,
+      "last_trade_time": 1782815259,
+      "low_trade_range": null,
+      "last_price": 2031.5,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 969,
+      "total_sell_quantity": 0,
+      "volume": 6848411,
+      "week_52_high": 3489.9,
+      "week_52_low": 2055.0
+    }
   }
 ]
