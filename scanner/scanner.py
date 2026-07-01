@@ -3,6 +3,7 @@ import csv
 import datetime
 import json
 import os
+import random
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -210,14 +211,26 @@ def run_scanner(
     live_quotes: Optional[Dict[str, Dict[str, Any]]] = None,
     max_workers: int = 4,
     top_n: int = 10,
+    sample_size: Optional[int] = None,
 ) -> int:
     stock_identifiers = load_stock_identifiers(stock_identifiers_path)
     if not stock_identifiers:
         print('[scanner] No stock identifiers available. Run the updater first.')
         return 0
 
+    stock_ids = list(stock_identifiers.keys())
+    if sample_size is not None:
+        if sample_size <= 0:
+            print('[scanner] sample size must be a positive integer.')
+            return 0
+        if sample_size < len(stock_ids):
+            stock_ids = random.sample(stock_ids, sample_size)
+            print(f'[scanner] Selected random sample of {len(stock_ids)} stock identifiers')
+        else:
+            print(f'[scanner] sample size {sample_size} exceeds available identifiers ({len(stock_ids)}); using all stocks')
+
     if live_quotes is None:
-        live_quotes = fetch_live_quotes(list(stock_identifiers.keys()), max_workers=max_workers)
+        live_quotes = fetch_live_quotes(stock_ids, max_workers=max_workers)
 
     if not live_quotes:
         print('[scanner] No live quotes available. Check credentials or network access.')
@@ -290,6 +303,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--no-simulate', action='store_true', help='Analyze signals without writing trade logs')
     parser.add_argument('--max-workers', type=int, default=int(os.getenv('SCAN_WORKERS', '4')), help='Concurrent workers for quote fetching')
     parser.add_argument('--top-n', type=int, default=10, help='Number of ranked candidates to display')
+    parser.add_argument('--sample-size', type=int, help='Pick a random subset of stock identifiers before fetching quotes')
     return parser
 
 
@@ -302,6 +316,7 @@ def main() -> int:
         simulate=not args.no_simulate,
         max_workers=args.max_workers,
         top_n=args.top_n,
+        sample_size=args.sample_size,
     )
 
 
