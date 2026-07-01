@@ -94,7 +94,10 @@
       "volume": 15695263,
       "week_52_high": 1611.8,
       "week_52_low": 1253.2
-    }
+    },
+    "active_for_intraday": true,
+    "discovery_source": "fallback",
+    "discovery_error": "No module named 'growwapi'"
   },
   {
     "stock_id": "TCS",
@@ -191,6 +194,33 @@
       "volume": 6848411,
       "week_52_high": 3489.9,
       "week_52_low": 2055.0
-    }
+    },
+    "active_for_intraday": true,
+    "discovery_source": "fallback",
+    "discovery_error": "No module named 'growwapi'"
+  },
+  {
+    "stock_id": "HDFCBANK",
+    "symbol": "HDFCBANK",
+    "exchange": "NSE",
+    "active_for_intraday": true,
+    "discovery_source": "fallback",
+    "discovery_error": "No module named 'growwapi'"
+  },
+  {
+    "stock_id": "INFY",
+    "symbol": "INFY",
+    "exchange": "NSE",
+    "active_for_intraday": true,
+    "discovery_source": "fallback",
+    "discovery_error": "No module named 'growwapi'"
+  },
+  {
+    "stock_id": "ICICIBANK",
+    "symbol": "ICICIBANK",
+    "exchange": "NSE",
+    "active_for_intraday": true,
+    "discovery_source": "fallback",
+    "discovery_error": "No module named 'growwapi'"
   }
 ]
