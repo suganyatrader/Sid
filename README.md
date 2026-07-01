@@ -78,14 +78,11 @@ GROWW_TOTP_TOKEN=123456
 python scanner.py
 ```
 
-> Note: The Node.js ingestion layer is now optional and is retained only as a legacy alternate collector.
 ## Data files
 
-- `data/stock_identifiers.json`: stock identifiers used by both layers.
-- `data/live_quotes.json`: latest quote captures from ingestion.
+- `data/stock_identifiers.json`: stock identifiers used by the scanner.
 - `data/trade_logs.csv`: virtual trade history and P&L.
 
 ## Notes
 
 - This first version uses a file-based persistence model for simplicity.
-- The ingestion layer can run in real API mode or fallback to simulated quotes when API credentials are not available.
