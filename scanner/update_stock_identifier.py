@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from groww_config import GrowwConfig
+from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
@@ -43,6 +44,8 @@ def build_groww_symbol(
     return '-'.join(components)
 
 
+quote_rate_limiter = MultiRateLimiter(DEFAULT_GROWW_QUOTE_RATE_LIMITS)
+
 def find_ticker_symbol(
     symbol: str,
     exchange: str = 'NSE',
@@ -67,11 +70,12 @@ def find_ticker_symbol(
 
         for exch in exchanges_to_try:
             try:
-                quote = groww.get_quote(
-                    exchange=exch,
-                    segment=groww.SEGMENT_CASH,
-                    trading_symbol=symbol,
-                )
+                with quote_rate_limiter:
+                    quote = groww.get_quote(
+                        exchange=exch,
+                        segment=groww.SEGMENT_CASH,
+                        trading_symbol=symbol,
+                    )
 
                 groww_symbol = build_groww_symbol(exch, symbol)
                 return {
@@ -172,57 +176,85 @@ def discover_nse_intraday_symbols(
 ) -> Dict[str, bool]:
     identifiers = load_stock_identifiers(stock_identifiers_path)
     results: Dict[str, bool] = {}
-    candidate_symbols = list(identifiers.values())
-    seen_symbols = {str(item.get('symbol') or item.get('stock_id') or '').upper() for item in candidate_symbols if item}
+    exchange = exchange.upper()
 
-    for symbol in DEFAULT_INTRADAY_SYMBOLS:
-        symbol_upper = symbol.upper()
-        if symbol_upper not in seen_symbols:
-            seen_symbols.add(symbol_upper)
-            candidate_symbols.append({'stock_id': symbol_upper, 'symbol': symbol_upper, 'exchange': exchange})
+    instrument_rows = []
+    try:
+        config = GrowwConfig.from_env() if not access_token else GrowwConfig(access_token=access_token)
+        token = access_token or config.get_access_token()
+        from growwapi import GrowwAPI
 
-    if limit is not None:
-        candidate_symbols = candidate_symbols[:limit]
+        api = GrowwAPI(token)
+        all_instruments = api.get_all_instruments()
+        mask = (
+            all_instruments['exchange'].astype(str).str.upper() == exchange
+            ) & (
+            all_instruments['segment'].astype(str).str.upper() == 'CASH'
+            ) & (
+            all_instruments['is_intraday'].astype(str).str.strip() == '1'
+        )
+        selected = all_instruments.loc[mask].drop_duplicates(subset='trading_symbol', keep='first')
+        if limit is not None:
+            selected = selected.head(limit)
+        instrument_rows = selected.to_dict('records')
+        source = 'api'
+        print(f'Found {len(instrument_rows)} intraday-eligible NSE cash instruments from Groww API.')
+    except Exception as exc:
+        print(f'Failed to load Groww instrument catalog: {exc}')
+        print('Falling back to seeded intraday symbol list.')
+        source = 'seeded'
+        instrument_rows = [
+            {
+                'trading_symbol': symbol,
+                'exchange': exchange,
+                'groww_symbol': build_groww_symbol(exchange, symbol),
+                'instrument_type': None,
+                'series': None,
+                'buy_allowed': 1,
+                'sell_allowed': 1,
+                'is_intraday': 1,
+            }
+            for symbol in DEFAULT_INTRADAY_SYMBOLS
+        ]
+        if limit is not None:
+            instrument_rows = instrument_rows[:limit]
 
-    for entry in candidate_symbols:
-        stock_id = str(entry.get('stock_id') or entry.get('symbol') or '').upper()
-        if not stock_id:
+    for row in instrument_rows:
+        trading_symbol = str(row.get('trading_symbol') or row.get('symbol') or '').strip()
+        if not trading_symbol:
             continue
 
+        stock_id = trading_symbol.upper()
         existing_entry = identifiers.get(stock_id)
         if existing_entry is None:
             existing_entry = {
                 'stock_id': stock_id,
-                'symbol': stock_id,
+                'symbol': trading_symbol,
                 'exchange': exchange,
-                'active_for_intraday': True,
-                'discovery_source': 'seeded',
             }
             identifiers[stock_id] = existing_entry
 
-        symbol = existing_entry.get('symbol') or stock_id
-        print(f'Discovering {stock_id} ({symbol})...')
-
-        result = find_ticker_symbol(symbol, exchange, access_token)
-        if result.get('found') or result.get('groww_symbol'):
-            existing_entry['groww_symbol'] = result.get('groww_symbol')
-            existing_entry['exchange'] = result.get('exchange', exchange)
-            existing_entry['active_for_intraday'] = True
-            existing_entry['discovery_source'] = 'discovered'
-            if 'quote' in result:
-                existing_entry['last_quote'] = result['quote']
-            results[stock_id] = True
-        else:
-            existing_entry['active_for_intraday'] = True
-            existing_entry['discovery_source'] = 'fallback'
-            existing_entry['discovery_error'] = result.get('error', 'unknown')
-            results[stock_id] = False
+        existing_entry.update(
+            {
+                'symbol': trading_symbol,
+                'exchange': exchange,
+                'groww_symbol': str(row.get('groww_symbol') or build_groww_symbol(exchange, trading_symbol)),
+                'active_for_intraday': True,
+                'discovery_source': source,
+                'instrument_type': row.get('instrument_type'),
+                'series': row.get('series'),
+                'buy_allowed': int(row['buy_allowed']) if row.get('buy_allowed') is not None else None,
+                'sell_allowed': int(row['sell_allowed']) if row.get('sell_allowed') is not None else None,
+                'is_intraday': 1 if str(row.get('is_intraday')).strip() == '1' else 0,
+            }
+        )
+        print(f'Discovering {stock_id} ({trading_symbol})...')
+        results[stock_id] = True
 
     save_stock_identifiers(identifiers, stock_identifiers_path)
     print('\nDiscovery Summary:')
     print(f'  Total: {len(results)}')
-    print(f'  Successful: {sum(results.values())}')
-    print(f'  Failed: {len(results) - sum(results.values())}')
+    print(f'  Added/Updated: {len(results)}')
     return results
 
 

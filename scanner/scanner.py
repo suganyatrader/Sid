@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from groww_config import GrowwConfig
+from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
@@ -67,15 +68,17 @@ def fetch_live_quotes(stock_ids: Optional[list[str]] = None, max_workers: int = 
         print(f'[scanner] Failed to initialize GrowwAPI client: {exc}')
         return {}
 
+    quote_rate_limiter = MultiRateLimiter(DEFAULT_GROWW_QUOTE_RATE_LIMITS)
     quotes: Dict[str, Dict[str, Any]] = {}
 
     def _fetch_one(stock_id: str) -> tuple[str, Optional[Dict[str, Any]]]:
         try:
-            quote = groww.get_quote(
-                exchange=groww.EXCHANGE_NSE,
-                segment=groww.SEGMENT_CASH,
-                trading_symbol=stock_id,
-            )
+            with quote_rate_limiter:
+                quote = groww.get_quote(
+                    exchange=groww.EXCHANGE_NSE,
+                    segment=groww.SEGMENT_CASH,
+                    trading_symbol=stock_id,
+                )
             print(f'[scanner] Fetched {stock_id} from Groww SDK')
             return stock_id, {'fetchedAt': datetime.datetime.now().isoformat(), 'quote': quote}
         except Exception as exc:
