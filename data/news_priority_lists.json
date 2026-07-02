@@ -1,0 +1,26 @@
+{
+  "buy": [
+    {
+      "stock_id": "RELIANCE",
+      "symbol": "RELIANCE",
+      "sector": "Energy",
+      "sentiment": "buy",
+      "positive_mentions": 4.0,
+      "negative_mentions": 1.0,
+      "margin": 3.0,
+      "score": 44.5
+    }
+  ],
+  "short": [
+    {
+      "stock_id": "TCS",
+      "symbol": "TCS",
+      "sector": "IT",
+      "sentiment": "short",
+      "positive_mentions": 1.0,
+      "negative_mentions": 3.0,
+      "margin": 2.0,
+      "score": 33.8
+    }
+  ]
+}

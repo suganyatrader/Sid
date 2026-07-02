@@ -1,0 +1,14 @@
+{
+  "RELIANCE": {
+    "positive": 4,
+    "negative": 1
+  },
+  "TCS": {
+    "positive": 1,
+    "negative": 3
+  },
+  "INFY": {
+    "positive": 2,
+    "negative": 2
+  }
+}
