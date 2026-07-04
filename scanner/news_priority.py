@@ -34,9 +34,17 @@ def load_stock_identifiers(path: Optional[Union[str, Path]] = None) -> List[Dict
     return []
 
 
-def load_news_payload(path: Optional[Union[str, Path]] = None, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
+def load_news_payload(path: Optional[Union[str, Path]] = None, payload: Optional[Union[Dict[str, Any], str]] = None) -> Dict[str, Dict[str, Any]]:
     if payload is not None:
-        return payload
+        if isinstance(payload, dict):
+            return payload
+        if isinstance(payload, str):
+            try:
+                loaded = json.loads(payload)
+            except json.JSONDecodeError:
+                return {}
+            return loaded if isinstance(loaded, dict) else {}
+        return {}
 
     target = Path(path) if path is not None else DEFAULT_NEWS_FILE
     if not target.exists():
@@ -93,9 +101,6 @@ def prioritize_stocks(
         positive = _to_number(news_stats.get('positive')) or 0.0
         negative = _to_number(news_stats.get('negative')) or 0.0
 
-        if positive == 0 and negative == 0:
-            continue
-
         if positive > negative:
             sentiment = 'buy'
             margin = positive - negative
@@ -103,7 +108,8 @@ def prioritize_stocks(
             sentiment = 'short'
             margin = negative - positive
         else:
-            continue
+            sentiment = 'neutral'
+            margin = 0.0
 
         liquidity_score = _to_number(metadata.get('liquidity_score')) or 0.0
         index_relevance = _infer_index_relevance(str(metadata.get('symbol') or stock_id), metadata.get('sector'))
@@ -123,13 +129,23 @@ def prioritize_stocks(
 
     buy_entries = [entry for entry in scored_entries if entry['sentiment'] == 'buy']
     short_entries = [entry for entry in scored_entries if entry['sentiment'] == 'short']
+    neutral_entries = [entry for entry in scored_entries if entry['sentiment'] == 'neutral']
 
     buy_entries.sort(key=lambda entry: entry['score'], reverse=True)
     short_entries.sort(key=lambda entry: entry['score'], reverse=True)
+    neutral_entries.sort(key=lambda entry: entry['score'], reverse=True)
+
+    buy_output = buy_entries[:top_n]
+    short_output = short_entries[:top_n]
+
+    if len(buy_output) < top_n:
+        buy_output.extend(neutral_entries[: top_n - len(buy_output)])
+    if len(short_output) < top_n:
+        short_output.extend(neutral_entries[: top_n - len(short_output)])
 
     return {
-        'buy': buy_entries[:top_n],
-        'short': short_entries[:top_n],
+        'buy': buy_output,
+        'short': short_output,
     }
 
 
@@ -147,7 +163,7 @@ def write_priority_lists(
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Prioritize stocks from previous-day news sentiment into buy and short lists')
     parser.add_argument('--stock-identifiers', default=str(STOCK_IDENTIFIERS_FILE), help='Path to stock identifiers JSON file')
-    parser.add_argument('--news-data', default=str(DEFAULT_NEWS_FILE), help='Path to a JSON file containing positive/negative news counts per stock')
+    parser.add_argument('--news-data', default=str(DEFAULT_NEWS_FILE), help='Path to a JSON file containing positive/negative news counts per stock. If omitted, the script can also accept an in-memory payload from the Python API.')
     parser.add_argument('--output', default=str(DATA_DIR / 'news_priority_lists.json'), help='Optional path to write the ranked JSON output')
     parser.add_argument('--top-n', type=int, default=300, help='Maximum number of entries to keep in each list')
     return parser

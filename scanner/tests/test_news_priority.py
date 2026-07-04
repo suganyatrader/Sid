@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from news_priority import prioritize_stocks
+from news_priority import load_news_payload, prioritize_stocks
 
 
 def test_prioritize_stocks_separates_buy_and_short_lists():
@@ -22,8 +22,8 @@ def test_prioritize_stocks_separates_buy_and_short_lists():
 
     assert result["buy"][0]["stock_id"] == "RELIANCE"
     assert result["short"][0]["stock_id"] == "TCS"
-    assert all(entry["sentiment"] == "buy" for entry in result["buy"])
-    assert all(entry["sentiment"] == "short" for entry in result["short"])
+    assert result["buy"][0]["sentiment"] == "buy"
+    assert result["short"][0]["sentiment"] == "short"
 
 
 def test_prioritize_stocks_respects_top_n_limit():
@@ -37,3 +37,28 @@ def test_prioritize_stocks_respects_top_n_limit():
 
     assert len(result["buy"]) == 3
     assert [entry["stock_id"] for entry in result["buy"]] == ["STOCK5", "STOCK4", "STOCK3"]
+
+
+def test_load_news_payload_accepts_inline_json_string():
+    payload = load_news_payload(payload='{"RELIANCE": {"positive": 4, "negative": 1}}')
+
+    assert payload["RELIANCE"]["positive"] == 4
+    assert payload["RELIANCE"]["negative"] == 1
+
+
+def test_prioritize_stocks_includes_all_identifiers_even_without_news():
+    stock_identifiers = [
+        {"stock_id": "A", "symbol": "A"},
+        {"stock_id": "B", "symbol": "B"},
+        {"stock_id": "C", "symbol": "C"},
+    ]
+    news_payload = {
+        "A": {"positive": 2, "negative": 1},
+        "B": {"positive": 0, "negative": 2},
+    }
+
+    result = prioritize_stocks(stock_identifiers, news_payload, top_n=10)
+
+    ranked_ids = {entry["stock_id"] for entry in result["buy"] + result["short"]}
+
+    assert ranked_ids == {"A", "B", "C"}
