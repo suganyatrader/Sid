@@ -16,6 +16,16 @@ DEFAULT_WINDOW_MINUTES = 10.0
 DEFAULT_POLL_INTERVAL_SECONDS = 15.0
 DEFAULT_TRAILING_STOP_PCT = 0.5
 DEFAULT_VOLUME_SPIKE_MULTIPLIER = 1.5
+DEFAULT_SUPPLY_PRESSURE_RATIO = 1.2
+
+
+def _extract_buy_sell_quantities(quote: Dict[str, Any]) -> tuple:
+    buy_quantity = _to_number(_extract_quote_value(quote, 'total_buy_quantity'))
+    sell_quantity = _to_number(_extract_quote_value(quote, 'total_sell_quantity'))
+    if buy_quantity is None or sell_quantity is None:
+        buy_quantity = _to_number(_extract_quote_value(quote, 'bid_quantity'))
+        sell_quantity = _to_number(_extract_quote_value(quote, 'offer_quantity'))
+    return buy_quantity, sell_quantity
 
 
 def detect_reversal(
@@ -26,6 +36,7 @@ def detect_reversal(
     previous_volume: Optional[float],
     trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
     volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
+    supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
 ) -> Dict[str, Any]:
     price = _to_number(_extract_quote_value(quote, 'ltp', 'last_price', 'price', 'close'))
     if price is None:
@@ -33,6 +44,7 @@ def detect_reversal(
 
     vwap = _to_number(_extract_quote_value(quote, 'vwap', 'vw', 'average_price'))
     volume = _to_number(_extract_quote_value(quote, 'volume', 'total_traded_volume', 'total_volume')) or 0.0
+    buy_quantity, sell_quantity = _extract_buy_sell_quantities(quote)
 
     peak_price = max(peak_price, price)
 
@@ -50,8 +62,18 @@ def detect_reversal(
         and volume > previous_volume * volume_spike_multiplier
     ):
         signals.append('down_volume_spike')
+    if buy_quantity and sell_quantity and sell_quantity > buy_quantity * supply_pressure_ratio:
+        signals.append('supply_pressure')
 
-    return {'price': price, 'vwap': vwap, 'volume': volume, 'peak_price': peak_price, 'signals': signals}
+    return {
+        'price': price,
+        'vwap': vwap,
+        'volume': volume,
+        'buy_quantity': buy_quantity,
+        'sell_quantity': sell_quantity,
+        'peak_price': peak_price,
+        'signals': signals,
+    }
 
 
 def append_exit_alert(
@@ -124,6 +146,7 @@ def run_exit_monitor(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
     volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
+    supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
     alerts_path: Optional[Path] = None,
     fetch_quote_fn: Optional[Callable[[], Optional[Dict[str, Any]]]] = None,
     sleep_fn: Callable[[float], None] = time.sleep,
@@ -157,6 +180,7 @@ def run_exit_monitor(
             previous_volume,
             trailing_stop_pct=trailing_stop_pct,
             volume_spike_multiplier=volume_spike_multiplier,
+            supply_pressure_ratio=supply_pressure_ratio,
         )
         price = reading['price']
         if price is None:
@@ -194,6 +218,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--poll-interval', type=float, default=DEFAULT_POLL_INTERVAL_SECONDS, help='Seconds between quote polls')
     parser.add_argument('--trailing-stop-pct', type=float, default=DEFAULT_TRAILING_STOP_PCT, help='Percent drop from peak price that triggers an alert')
     parser.add_argument('--volume-spike-multiplier', type=float, default=DEFAULT_VOLUME_SPIKE_MULTIPLIER, help='Volume multiple (vs previous poll) that counts as a down-volume spike')
+    parser.add_argument('--supply-pressure-ratio', type=float, default=DEFAULT_SUPPLY_PRESSURE_RATIO, help='Sell-quantity-to-buy-quantity ratio (order book) that counts as supply pressure')
     parser.add_argument('--exit-alerts-file', type=Path, default=EXIT_ALERTS_FILE, help='CSV file to log alerts to')
     return parser
 
@@ -208,6 +233,7 @@ def main() -> int:
         poll_interval_seconds=args.poll_interval,
         trailing_stop_pct=args.trailing_stop_pct,
         volume_spike_multiplier=args.volume_spike_multiplier,
+        supply_pressure_ratio=args.supply_pressure_ratio,
         alerts_path=args.exit_alerts_file,
     )
 

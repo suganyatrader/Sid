@@ -40,6 +40,30 @@ def test_detect_reversal_flags_down_volume_spike():
     assert 'down_volume_spike' in reading['signals']
 
 
+def test_detect_reversal_flags_supply_pressure_from_order_book():
+    quote = {'ltp': 101.0, 'total_buy_quantity': 1000, 'total_sell_quantity': 3000}
+
+    reading = detect_reversal(
+        quote, entry_price=100.0, peak_price=101.0, previous_price=None, previous_volume=None,
+        supply_pressure_ratio=1.2,
+    )
+
+    assert 'supply_pressure' in reading['signals']
+    assert reading['buy_quantity'] == 1000
+    assert reading['sell_quantity'] == 3000
+
+
+def test_detect_reversal_falls_back_to_top_of_book_quantities():
+    quote = {'ltp': 101.0, 'bid_quantity': 500, 'offer_quantity': 2000}
+
+    reading = detect_reversal(
+        quote, entry_price=100.0, peak_price=101.0, previous_price=None, previous_volume=None,
+        supply_pressure_ratio=1.2,
+    )
+
+    assert 'supply_pressure' in reading['signals']
+
+
 def test_detect_reversal_no_signals_while_holding_up():
     quote = {'ltp': 101.0, 'vwap': 100.0, 'volume': 100000}
 
