@@ -1,5 +1,6 @@
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -155,8 +156,11 @@ def write_priority_lists(
 ) -> Path:
     target = Path(path) if path is not None else DATA_DIR / 'news_priority_lists.json'
     target.parent.mkdir(parents=True, exist_ok=True)
+    payload = dict(prioritized)
+    payload['generated_at'] = datetime.now(timezone.utc).isoformat()
     with target.open('w', encoding='utf-8') as handle:
-        json.dump(prioritized, handle, indent=2)
+        json.dump(payload, handle, indent=2)
+        handle.write('\n')
     return target
 
 
@@ -178,7 +182,16 @@ def main() -> int:
     prioritized = prioritize_stocks(stock_identifiers, news_payload, top_n=args.top_n)
     out_path = write_priority_lists(prioritized, args.output)
 
-    print(json.dumps(prioritized, indent=2))
+    buy_entries = prioritized.get('buy', [])
+    short_entries = prioritized.get('short', [])
+
+    buy_positive_count = sum(1 for entry in buy_entries if entry.get('positive_mentions', 0) > 0)
+    buy_negative_count = sum(1 for entry in buy_entries if entry.get('negative_mentions', 0) > 0)
+    short_positive_count = sum(1 for entry in short_entries if entry.get('positive_mentions', 0) > 0)
+    short_negative_count = sum(1 for entry in short_entries if entry.get('negative_mentions', 0) > 0)
+
+    print(f"[news_priority] Buy list: {len(buy_entries)} stocks | positive_mentions={buy_positive_count} | negative_mentions={buy_negative_count}")
+    print(f"[news_priority] Short list: {len(short_entries)} stocks | positive_mentions={short_positive_count} | negative_mentions={short_negative_count}")
     print(f'[news_priority] Wrote results to {out_path}')
     return 0
 

@@ -1,9 +1,10 @@
+import json
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from news_priority import load_news_payload, prioritize_stocks
+from news_priority import load_news_payload, prioritize_stocks, write_priority_lists
 
 
 def test_prioritize_stocks_separates_buy_and_short_lists():
@@ -62,3 +63,14 @@ def test_prioritize_stocks_includes_all_identifiers_even_without_news():
     ranked_ids = {entry["stock_id"] for entry in result["buy"] + result["short"]}
 
     assert ranked_ids == {"A", "B", "C"}
+
+
+def test_write_priority_lists_includes_generated_timestamp(tmp_path):
+    output_path = tmp_path / "output.json"
+    write_priority_lists({"buy": [], "short": []}, output_path)
+
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert "generated_at" in payload
+    assert payload["buy"] == []
+    assert payload["short"] == []
