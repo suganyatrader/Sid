@@ -4,7 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Tuple
 
-from groq_config import GroqConfig
+from llm_config import LlmConfig
 from rate_limiter import DEFAULT_GROQ_RATE_LIMITS, MultiRateLimiter
 
 ARTICLES_PER_BATCH = 10
@@ -54,7 +54,7 @@ def _merge_counts(
         entry['negative'] += int(counts.get('negative', 0) or 0)
 
 
-def _call_groq_batch(
+def _call_llm_batch(
     client: Any,
     model: str,
     symbols: List[str],
@@ -94,7 +94,7 @@ def _call_groq_batch(
             for half in (articles[:mid], articles[mid:]):
                 _merge_counts(
                     result,
-                    _call_groq_batch(client, model, symbols, half, rate_limiter, provider),
+                    _call_llm_batch(client, model, symbols, half, rate_limiter, provider),
                 )
             return result
 
@@ -104,7 +104,7 @@ def _call_groq_batch(
             delay = min(float(retry_match.group(1)), 60.0)
             print(f'[news_sentiment] rate limited, retrying in {delay:.1f}s')
             time.sleep(delay)
-            return _call_groq_batch(
+            return _call_llm_batch(
                 client,
                 model,
                 symbols,
@@ -121,12 +121,12 @@ def _call_groq_batch(
 def analyze_articles(
     articles: List[Dict[str, str]],
     stock_identifiers: List[Dict[str, Any]],
-    config: Optional[GroqConfig] = None,
+    config: Optional[LlmConfig] = None,
     articles_per_batch: int = ARTICLES_PER_BATCH,
     max_workers: int = 8,
 ) -> Dict[str, Dict[str, int]]:
     if config is None:
-        config = GroqConfig.from_env()
+        config = LlmConfig.from_env()
 
     valid_symbols = {
         str(item.get('symbol') or item.get('stock_id')).strip()
@@ -148,7 +148,7 @@ def analyze_articles(
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = [
             executor.submit(
-                _call_groq_batch,
+                _call_llm_batch,
                 client,
                 config.model,
                 symbols,

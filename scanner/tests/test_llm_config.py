@@ -5,7 +5,7 @@ import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from groq_config import GroqConfig
+from llm_config import LlmConfig
 
 
 @pytest.fixture(autouse=True)
@@ -18,7 +18,7 @@ def test_from_env_reads_env_vars_directly(monkeypatch):
     monkeypatch.setenv('GROQ_API_KEY', 'test-key')
     monkeypatch.setenv('GROQ_MODEL', 'llama-3.1-8b-instant')
 
-    config = GroqConfig.from_env(env_path=Path('/nonexistent/.env'))
+    config = LlmConfig.from_env(env_path=Path('/nonexistent/.env'))
 
     assert config.api_key == 'test-key'
     assert config.model == 'llama-3.1-8b-instant'
@@ -27,7 +27,7 @@ def test_from_env_reads_env_vars_directly(monkeypatch):
 def test_from_env_defaults_model_when_unset(monkeypatch):
     monkeypatch.setenv('GROQ_API_KEY', 'test-key')
 
-    config = GroqConfig.from_env(env_path=Path('/nonexistent/.env'))
+    config = LlmConfig.from_env(env_path=Path('/nonexistent/.env'))
 
     assert config.model == 'llama-3.3-70b-versatile'
 
@@ -37,20 +37,20 @@ def test_real_env_wins_over_env_file(tmp_path, monkeypatch):
     env_file.write_text('GROQ_API_KEY=from-file\n')
     monkeypatch.setenv('GROQ_API_KEY', 'from-real-env')
 
-    config = GroqConfig.from_env(env_path=env_file)
+    config = LlmConfig.from_env(env_path=env_file)
 
     assert config.api_key == 'from-real-env'
 
 
 def test_validate_raises_when_api_key_missing():
-    config = GroqConfig(api_key=None)
+    config = LlmConfig(api_key=None)
 
     with pytest.raises(ValueError):
         config.validate()
 
 
 def test_validate_passes_when_api_key_present():
-    config = GroqConfig(api_key='test-key')
+    config = LlmConfig(api_key='test-key')
 
     config.validate()
 
@@ -60,7 +60,7 @@ def test_from_env_uses_ollama_when_enabled(monkeypatch):
     monkeypatch.setenv('OLLAMA_MODEL', 'qwen2.5:7b')
     monkeypatch.setenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')
 
-    config = GroqConfig.from_env(env_path=Path('/nonexistent/.env'))
+    config = LlmConfig.from_env(env_path=Path('/nonexistent/.env'))
 
     assert config.provider == 'ollama'
     assert config.model == 'qwen2.5:7b'
@@ -68,6 +68,6 @@ def test_from_env_uses_ollama_when_enabled(monkeypatch):
 
 
 def test_validate_passes_for_ollama_without_api_key():
-    config = GroqConfig(provider='ollama')
+    config = LlmConfig(provider='ollama')
 
     config.validate()

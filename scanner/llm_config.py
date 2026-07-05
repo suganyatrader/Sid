@@ -58,14 +58,14 @@ class OllamaClient:
 
 
 @dataclass(frozen=True)
-class GroqConfig:
+class LlmConfig:
     api_key: Optional[str] = None
     model: str = 'llama-3.3-70b-versatile'
     provider: str = 'groq'
     base_url: Optional[str] = None
 
     @classmethod
-    def from_env(cls, env_path: Optional[Path] = None) -> 'GroqConfig':
+    def from_env(cls, env_path: Optional[Path] = None) -> 'LlmConfig':
         if env_path is None:
             env_path = Path(__file__).resolve().parent / '.env'
 
@@ -99,7 +99,7 @@ class GroqConfig:
         if os.getenv('USE_OLLAMA', '').strip().lower() in {'1', 'true', 'yes', 'on'}:
             provider = 'ollama'
 
-        model = os.getenv('GROQ_MODEL') or os.getenv('OLLAMA_MODEL') or 'qwen3.6'
+        model = os.getenv('GROQ_MODEL') or os.getenv('OLLAMA_MODEL') or ('qwen3:6b' if provider == 'ollama' else 'llama-3.3-70b-versatile')
         base_url = os.getenv('OLLAMA_BASE_URL') or 'http://127.0.0.1:11434'
 
         return cls(

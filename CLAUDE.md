@@ -8,7 +8,7 @@ All commands run from the `scanner/` directory (or repo root, per the note below
 
 ```bash
 cd scanner
-python -m pip install -r requirements.txt   # install deps (growwapi, pyotp, python-dotenv, pandas, requests, feedparser, groq)
+python -m pip install -r requirements.txt   # install deps (growwapi, pyotp, python-dotenv, pandas, requests, feedparser, groq, openai)
 
 python -m pytest tests/                     # run all tests
 python -m pytest tests/test_news_priority.py -k test_prioritize_stocks_respects_top_n_limit  # run a single test
@@ -16,7 +16,7 @@ python -m pytest tests/test_news_priority.py -k test_prioritize_stocks_respects_
 python scanner.py                           # run the momentum scanner (fetches live quotes, simulates trades)
 python scanner.py --no-simulate --sample-size 20 --top-n 5   # dry run against a random subset
 
-python news_priority.py --top-n 100         # fetch live Moneycontrol news, analyze via Groq, rank buy/short lists (top 100 each)
+python news_priority.py --top-n 100         # fetch live Moneycontrol news, analyze via LLM (Groq or Ollama), rank buy/short lists (top 100 each)
 python news_priority.py --news-data data/manual_news.json --top-n 100  # offline override: skip live fetch/LLM, use a JSON payload instead
 python update_stock_identifier.py --discover              # populate data/stock_identifiers.json from Groww's instrument catalog
 python update_stock_identifier.py --stock-id RELIANCE      # refresh a single identifier's Groww symbol/quote
@@ -35,11 +35,17 @@ The Groww SDK requires auth, resolved in this priority order by `GrowwConfig.fro
 
 Config is loaded from `scanner/.env` (via `python-dotenv`, falling back to a hand-rolled parser if it's not installed) even when scripts are invoked from the repo root. `STOCK_IDS` and `GROWW_BASE_URL` env vars are not used by the current flow.
 
-The live news-sentiment pipeline in `news_priority.py` (`news_fetcher.py` + `news_sentiment.py`) requires Groq credentials, resolved by `GroqConfig.from_env()` (`scanner/groq_config.py`) — a self-contained duplicate of the same `.env`-loading pattern used by `GrowwConfig`, not shared with it:
+The live news-sentiment pipeline in `news_priority.py` (`news_fetcher.py` + `news_sentiment.py`) uses `LlmConfig.from_env()` (`scanner/llm_config.py`) — a self-contained duplicate of the same `.env`-loading pattern used by `GrowwConfig`, not shared with it. Provider is selected by the `LLM_PROVIDER` env var (defaults to `groq`), or the `USE_OLLAMA` shorthand flag:
+
+**Groq provider:**
 1. `GROQ_API_KEY` — required.
 2. `GROQ_MODEL` — optional, defaults to `llama-3.3-70b-versatile`.
 
-This pipeline still does not talk to Groww / need Groww credentials.
+**Ollama provider** (set `LLM_PROVIDER=ollama` or `USE_OLLAMA=true`):
+1. `OLLAMA_MODEL` — optional, defaults to `qwen3:6b`.
+2. `OLLAMA_BASE_URL` — optional, defaults to `http://127.0.0.1:11434`.
+
+This pipeline does not talk to Groww / need Groww credentials.
 
 ## Architecture
 
@@ -53,7 +59,7 @@ This is a file-based (no DB, no server) intraday trading utility for NSE stocks,
 
 - **`news_fetcher.py`** — fetches and parses Moneycontrol RSS feeds (`DEFAULT_RSS_FEEDS`: latest news, market reports, buzzing stocks, results, economy). Pure I/O, no LLM involved; per-feed failures are caught and logged, returning `[]` for that feed rather than raising. `fetch_articles()` concatenates all feeds and dedupes by `(title, link)`.
 
-- **`news_sentiment.py`** — turns a list of fetched articles into the same `{symbol: {"positive": n, "negative": n}}` shape `prioritize_stocks()` expects. Chunks articles into batches (`ARTICLES_PER_BATCH = 25`) and sends each batch, alongside the bare list of valid ticker symbols from `stock_identifiers.json`, to Groq in parallel (`ThreadPoolExecutor`, rate-limited via `MultiRateLimiter(DEFAULT_GROQ_RATE_LIMITS)`) — this bulk-fetch-then-map design (few large LLM calls against batches of articles, rather than one call per stock) keeps token usage and API calls low relative to querying each of the 500+ symbols individually. The LLM's response is treated as untrusted: any ticker symbol it returns that isn't in the real roster is dropped before aggregation. One batch failing (bad JSON, API error) is logged and skipped without affecting other batches.
+- **`news_sentiment.py`** — turns a list of fetched articles into the same `{symbol: {"positive": n, "negative": n}}` shape `prioritize_stocks()` expects. Chunks articles into batches (`ARTICLES_PER_BATCH = 25`) and sends each batch, alongside the bare list of valid ticker symbols from `stock_identifiers.json`, to an LLM (Groq or Ollama) in parallel (`ThreadPoolExecutor`, rate-limited via `MultiRateLimiter(DEFAULT_GROQ_RATE_LIMITS)`) — this bulk-fetch-then-map design (few large LLM calls against batches of articles, rather than one call per stock) keeps token usage and API calls low relative to querying each of the 500+ symbols individually. The LLM's response is treated as untrusted: any ticker symbol it returns that isn't in the real roster is dropped before aggregation. One batch failing (bad JSON, API error) is logged and skipped without affecting other batches.
 
 - **`rate_limiter.py`** — `RateLimiter` (single sliding-window limiter) and `MultiRateLimiter` (layers several limiters, e.g. 10 calls/sec AND 300 calls/min — see `DEFAULT_GROWW_QUOTE_RATE_LIMITS`, or 25 calls/min for Groq — see `DEFAULT_GROQ_RATE_LIMITS`). Used as a context manager around every `groww.get_quote()` call in `scanner.py`/`update_stock_identifier.py`, and around every Groq batch call in `news_sentiment.py`, to stay under each API's rate limits during concurrent fetches.
 
