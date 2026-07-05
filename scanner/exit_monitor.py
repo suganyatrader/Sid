@@ -13,10 +13,14 @@ DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 EXIT_ALERTS_FILE = DATA_DIR / 'exit_alerts.csv'
 
 DEFAULT_WINDOW_MINUTES = 10.0
-DEFAULT_POLL_INTERVAL_SECONDS = 15.0
+DEFAULT_POLL_INTERVAL_SECONDS = 2.0
+DEFAULT_CONFIRMATION_POLLS = 2
 DEFAULT_TRAILING_STOP_PCT = 0.5
 DEFAULT_VOLUME_SPIKE_MULTIPLIER = 1.5
 DEFAULT_SUPPLY_PRESSURE_RATIO = 1.2
+VOLUME_DELTA_HISTORY_SIZE = 20
+
+ALL_SIGNAL_NAMES = ['below_entry', 'below_vwap', 'trailing_stop', 'down_volume_spike', 'supply_pressure']
 
 
 def _extract_buy_sell_quantities(quote: Dict[str, Any]) -> tuple:
@@ -34,6 +38,7 @@ def detect_reversal(
     peak_price: float,
     previous_price: Optional[float],
     previous_volume: Optional[float],
+    average_volume_delta: Optional[float] = None,
     trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
     volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
     supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
@@ -55,13 +60,10 @@ def detect_reversal(
         signals.append('below_vwap')
     if peak_price and price <= peak_price * (1 - trailing_stop_pct / 100.0):
         signals.append('trailing_stop')
-    if (
-        previous_price is not None
-        and previous_volume
-        and price < previous_price
-        and volume > previous_volume * volume_spike_multiplier
-    ):
-        signals.append('down_volume_spike')
+    if previous_price is not None and previous_volume is not None and average_volume_delta and price < previous_price:
+        volume_delta = volume - previous_volume
+        if volume_delta > average_volume_delta * volume_spike_multiplier:
+            signals.append('down_volume_spike')
     if buy_quantity and sell_quantity and sell_quantity > buy_quantity * supply_pressure_ratio:
         signals.append('supply_pressure')
 
@@ -144,6 +146,7 @@ def run_exit_monitor(
     entry_price: float,
     window_minutes: float = DEFAULT_WINDOW_MINUTES,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
+    confirmation_polls: int = DEFAULT_CONFIRMATION_POLLS,
     trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
     volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
     supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
@@ -162,8 +165,13 @@ def run_exit_monitor(
     peak_price = entry_price
     previous_price: Optional[float] = None
     previous_volume: Optional[float] = None
+    volume_deltas: List[float] = []
+    signal_streaks = {name: 0 for name in ALL_SIGNAL_NAMES}
 
-    print(f'[exit-monitor] Watching {stock_id} for {window_minutes:.1f} min, entry_price={entry_price}')
+    print(
+        f'[exit-monitor] Watching {stock_id} for {window_minutes:.1f} min, entry_price={entry_price}, '
+        f'confirming signals over {confirmation_polls} consecutive polls'
+    )
 
     while now_fn() < deadline:
         quote = fetch_quote_fn()
@@ -172,12 +180,15 @@ def run_exit_monitor(
             sleep_fn(poll_interval_seconds)
             continue
 
+        average_volume_delta = (sum(volume_deltas) / len(volume_deltas)) if volume_deltas else None
+
         reading = detect_reversal(
             quote,
             entry_price,
             peak_price,
             previous_price,
             previous_volume,
+            average_volume_delta=average_volume_delta,
             trailing_stop_pct=trailing_stop_pct,
             volume_spike_multiplier=volume_spike_multiplier,
             supply_pressure_ratio=supply_pressure_ratio,
@@ -189,16 +200,33 @@ def run_exit_monitor(
             continue
 
         peak_price = reading['peak_price']
-        signals = reading['signals']
+        active_signals = reading['signals']
 
-        if signals:
+        confirmed_signals = []
+        for name in ALL_SIGNAL_NAMES:
+            if name in active_signals:
+                signal_streaks[name] += 1
+            else:
+                signal_streaks[name] = 0
+            if signal_streaks[name] >= confirmation_polls:
+                confirmed_signals.append(name)
+
+        if confirmed_signals:
             print(
                 f"[exit-monitor] ALERT sell {stock_id}: price={price} peak={peak_price} "
-                f"signals={', '.join(signals)}"
+                f"signals={', '.join(confirmed_signals)}"
             )
-            append_exit_alert(stock_id, price, entry_price, peak_price, signals, alerts_path)
+            append_exit_alert(stock_id, price, entry_price, peak_price, confirmed_signals, alerts_path)
         else:
-            print(f'[exit-monitor] {stock_id} holding: price={price} peak={peak_price}')
+            pending = [f'{name}({signal_streaks[name]}/{confirmation_polls})' for name in active_signals]
+            pending_note = f" pending: {', '.join(pending)}" if pending else ''
+            print(f'[exit-monitor] {stock_id} holding: price={price} peak={peak_price}{pending_note}')
+
+        if reading['volume'] is not None and previous_volume is not None:
+            delta = reading['volume'] - previous_volume
+            if delta >= 0:
+                volume_deltas.append(delta)
+                volume_deltas = volume_deltas[-VOLUME_DELTA_HISTORY_SIZE:]
 
         previous_price = price
         previous_volume = reading['volume']
@@ -216,8 +244,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--entry-price', type=float, required=True, help='Price the position was bought at')
     parser.add_argument('--window-minutes', type=float, default=DEFAULT_WINDOW_MINUTES, help='How long to keep watching')
     parser.add_argument('--poll-interval', type=float, default=DEFAULT_POLL_INTERVAL_SECONDS, help='Seconds between quote polls')
+    parser.add_argument('--confirmation-polls', type=int, default=DEFAULT_CONFIRMATION_POLLS, help='Consecutive polls a signal must hold before it triggers an alert')
     parser.add_argument('--trailing-stop-pct', type=float, default=DEFAULT_TRAILING_STOP_PCT, help='Percent drop from peak price that triggers an alert')
-    parser.add_argument('--volume-spike-multiplier', type=float, default=DEFAULT_VOLUME_SPIKE_MULTIPLIER, help='Volume multiple (vs previous poll) that counts as a down-volume spike')
+    parser.add_argument('--volume-spike-multiplier', type=float, default=DEFAULT_VOLUME_SPIKE_MULTIPLIER, help='Multiple of the recent average per-poll volume increment that counts as a down-volume spike')
     parser.add_argument('--supply-pressure-ratio', type=float, default=DEFAULT_SUPPLY_PRESSURE_RATIO, help='Sell-quantity-to-buy-quantity ratio (order book) that counts as supply pressure')
     parser.add_argument('--exit-alerts-file', type=Path, default=EXIT_ALERTS_FILE, help='CSV file to log alerts to')
     return parser
@@ -231,6 +260,7 @@ def main() -> int:
         entry_price=args.entry_price,
         window_minutes=args.window_minutes,
         poll_interval_seconds=args.poll_interval,
+        confirmation_polls=args.confirmation_polls,
         trailing_stop_pct=args.trailing_stop_pct,
         volume_spike_multiplier=args.volume_spike_multiplier,
         supply_pressure_ratio=args.supply_pressure_ratio,
