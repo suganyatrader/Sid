@@ -99,7 +99,7 @@ class LlmConfig:
         if os.getenv('USE_OLLAMA', '').strip().lower() in {'1', 'true', 'yes', 'on'}:
             provider = 'ollama'
 
-        model = os.getenv('GROQ_MODEL') or os.getenv('OLLAMA_MODEL') or ('qwen3:6b' if provider == 'ollama' else 'llama-3.3-70b-versatile')
+        model = os.getenv('GROQ_MODEL') or os.getenv('OLLAMA_MODEL') or ('qwen3.6' if provider == 'ollama' else 'llama-3.3-70b-versatile')
         base_url = os.getenv('OLLAMA_BASE_URL') or 'http://127.0.0.1:11434'
 
         return cls(

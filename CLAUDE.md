@@ -42,7 +42,7 @@ The live news-sentiment pipeline in `news_priority.py` (`news_fetcher.py` + `new
 2. `GROQ_MODEL` — optional, defaults to `llama-3.3-70b-versatile`.
 
 **Ollama provider** (set `LLM_PROVIDER=ollama` or `USE_OLLAMA=true`):
-1. `OLLAMA_MODEL` — optional, defaults to `qwen3:6b`.
+1. `OLLAMA_MODEL` — optional, defaults to `qwen3.6`.
 2. `OLLAMA_BASE_URL` — optional, defaults to `http://127.0.0.1:11434`.
 
 This pipeline does not talk to Groww / need Groww credentials.
