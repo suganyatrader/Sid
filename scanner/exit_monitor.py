@@ -107,13 +107,9 @@ def append_exit_alert(
 
 def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[Dict[str, Any]]]]:
     config = GrowwConfig.from_env()
-    try:
-        access_token = config.get_access_token()
-    except ValueError as exc:
-        print(f'[exit-monitor] {exc}')
-        return None
-    except Exception as exc:
-        print(f'[exit-monitor] Failed to obtain Groww access token: {exc}')
+    access_token = config.access_token
+    if not access_token:
+        print('[exit-monitor] Groww access token not set in .env')
         return None
 
     try:

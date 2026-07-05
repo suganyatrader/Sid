@@ -52,13 +52,9 @@ def fetch_live_quotes(stock_ids: Optional[list[str]] = None, max_workers: int = 
         return {}
 
     config = GrowwConfig.from_env()
-    try:
-        access_token = config.get_access_token()
-    except ValueError as exc:
-        print(f'[scanner] {exc}')
-        return {}
-    except Exception as exc:
-        print(f'[scanner] Failed to obtain Groww access token: {exc}')
+    access_token = config.access_token
+    if not access_token:
+        print('[scanner] Groww access token not set in .env')
         return {}
 
     try:

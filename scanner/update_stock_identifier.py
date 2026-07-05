@@ -53,7 +53,7 @@ def find_ticker_symbol(
 ) -> Dict[str, Any]:
     try:
         config = GrowwConfig.from_env() if not access_token else GrowwConfig(access_token=access_token)
-        token = access_token or config.get_access_token()
+        token = access_token or config.access_token
 
         if not token:
             raise ValueError('Access token not found')
@@ -181,7 +181,7 @@ def discover_nse_intraday_symbols(
     instrument_rows = []
     try:
         config = GrowwConfig.from_env() if not access_token else GrowwConfig(access_token=access_token)
-        token = access_token or config.get_access_token()
+        token = access_token or config.access_token
         from growwapi import GrowwAPI
 
         api = GrowwAPI(token)
