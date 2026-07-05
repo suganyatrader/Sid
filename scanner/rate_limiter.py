@@ -52,6 +52,10 @@ DEFAULT_GROWW_QUOTE_RATE_LIMITS = [
     (300, 60.0),
 ]
 
+DEFAULT_GROQ_RATE_LIMITS = [
+    (25, 60.0),
+]
+
 
 class MultiRateLimiter:
     """Combine multiple rate limiters for layered API limits."""

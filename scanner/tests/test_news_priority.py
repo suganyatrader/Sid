@@ -4,7 +4,17 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from news_priority import load_news_payload, prioritize_stocks, write_priority_lists
+from news_priority import build_parser, load_news_payload, prioritize_stocks, write_priority_lists
+
+
+def test_build_parser_defaults_news_data_to_none():
+    args = build_parser().parse_args([])
+
+    assert args.news_data is None
+
+
+def test_load_news_payload_returns_empty_when_no_path_or_payload():
+    assert load_news_payload() == {}
 
 
 def test_prioritize_stocks_separates_buy_and_short_lists():

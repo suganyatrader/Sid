@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Optional, Union
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
-DEFAULT_NEWS_FILE = DATA_DIR / 'previous_day_news.json'
 
 
 def _to_number(value: Any) -> Optional[float]:
@@ -47,7 +46,10 @@ def load_news_payload(path: Optional[Union[str, Path]] = None, payload: Optional
             return loaded if isinstance(loaded, dict) else {}
         return {}
 
-    target = Path(path) if path is not None else DEFAULT_NEWS_FILE
+    if path is None:
+        return {}
+
+    target = Path(path)
     if not target.exists():
         return {}
 
@@ -165,9 +167,9 @@ def write_priority_lists(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='Prioritize stocks from previous-day news sentiment into buy and short lists')
+    parser = argparse.ArgumentParser(description='Prioritize stocks from live news sentiment into buy and short lists')
     parser.add_argument('--stock-identifiers', default=str(STOCK_IDENTIFIERS_FILE), help='Path to stock identifiers JSON file')
-    parser.add_argument('--news-data', default=str(DEFAULT_NEWS_FILE), help='Path to a JSON file containing positive/negative news counts per stock. If omitted, the script can also accept an in-memory payload from the Python API.')
+    parser.add_argument('--news-data', default=None, help='Optional path to a JSON file containing positive/negative news counts per stock, used as an offline override. If omitted, live news is fetched from Moneycontrol RSS feeds and analyzed via Groq.')
     parser.add_argument('--output', default=str(DATA_DIR / 'news_priority_lists.json'), help='Optional path to write the ranked JSON output')
     parser.add_argument('--top-n', type=int, default=300, help='Maximum number of entries to keep in each list')
     return parser
@@ -178,7 +180,16 @@ def main() -> int:
     args = parser.parse_args()
 
     stock_identifiers = load_stock_identifiers(args.stock_identifiers)
-    news_payload = load_news_payload(args.news_data)
+
+    if args.news_data:
+        news_payload = load_news_payload(args.news_data)
+    else:
+        from news_fetcher import fetch_articles
+        from news_sentiment import analyze_articles
+
+        articles = fetch_articles()
+        news_payload = analyze_articles(articles, stock_identifiers)
+
     prioritized = prioritize_stocks(stock_identifiers, news_payload, top_n=args.top_n)
     out_path = write_priority_lists(prioritized, args.output)
 
