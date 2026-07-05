@@ -12,6 +12,10 @@ from llm_config import LlmConfig
 def _clean_env(monkeypatch):
     monkeypatch.delenv('GROQ_API_KEY', raising=False)
     monkeypatch.delenv('GROQ_MODEL', raising=False)
+    monkeypatch.delenv('OLLAMA_MODEL', raising=False)
+    monkeypatch.delenv('OLLAMA_BASE_URL', raising=False)
+    monkeypatch.delenv('LLM_PROVIDER', raising=False)
+    monkeypatch.delenv('USE_OLLAMA', raising=False)
 
 
 def test_from_env_reads_env_vars_directly(monkeypatch):

@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from llm_config import LlmConfig
 from rate_limiter import DEFAULT_GROQ_RATE_LIMITS, MultiRateLimiter
 
-ARTICLES_PER_BATCH = 10
+ARTICLES_PER_BATCH = 3
 SUMMARY_MAX_CHARS = 220
 MIN_BATCH_SIZE = 3
 RETRY_AFTER_PATTERN = re.compile(r'try again in ([\d.]+)s', re.IGNORECASE)
@@ -26,6 +26,10 @@ SYSTEM_PROMPT_TEMPLATE = (
 )
 
 
+def _strip_html(text: str) -> str:
+    return re.sub(r'<[^>]+>', '', text).strip()
+
+
 def _chunk(items: List[Any], size: int) -> List[List[Any]]:
     return [items[i:i + size] for i in range(0, len(items), size)]
 
@@ -35,8 +39,8 @@ def build_batch_prompt(symbols: List[str], articles: List[Dict[str, str]]) -> Tu
 
     lines = []
     for index, article in enumerate(articles, start=1):
-        title = article.get('title', '').strip()
-        summary = article.get('summary', '').strip()[:SUMMARY_MAX_CHARS]
+        title = _strip_html(article.get('title', ''))
+        summary = _strip_html(article.get('summary', ''))[:SUMMARY_MAX_CHARS]
         lines.append(f'{index}. {title} - {summary}')
     user_prompt = '\n'.join(lines)
 
@@ -123,7 +127,7 @@ def analyze_articles(
     stock_identifiers: List[Dict[str, Any]],
     config: Optional[LlmConfig] = None,
     articles_per_batch: int = ARTICLES_PER_BATCH,
-    max_workers: int = 8,
+    max_workers: int = 2,
 ) -> Dict[str, Dict[str, int]]:
     if config is None:
         config = LlmConfig.from_env()

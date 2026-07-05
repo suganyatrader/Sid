@@ -34,13 +34,22 @@ class OllamaClient:
         if 'response_format' in kwargs:
             payload['format'] = 'json'
 
-        response = requests.post(
-            f'{self.base_url}/api/chat',
-            json=payload,
-            timeout=180,
-        )
-        response.raise_for_status()
-        data = response.json()
+        response = None
+        try:
+            response = requests.post(
+                f'{self.base_url}/api/chat',
+                json=payload,
+                timeout=180,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except requests.exceptions.RequestException as exc:
+            status = response.status_code if response is not None else 'N/A'
+            body = response.text[:500] if response is not None else str(exc)
+            raise RuntimeError(f'Ollama API error ({status}): {body}') from exc
+
+        if 'error' in data:
+            raise RuntimeError(f'Ollama error: {data["error"]}')
 
         class _ChoiceMessage:
             def __init__(self, content: str) -> None:
