@@ -60,22 +60,25 @@ def _call_groq_batch(
     symbols: List[str],
     articles: List[Dict[str, str]],
     rate_limiter: MultiRateLimiter,
+    provider: str = 'groq',
     _retried_rate_limit: bool = False,
 ) -> Dict[str, Dict[str, int]]:
     system_prompt, user_prompt = build_batch_prompt(symbols, articles)
 
     try:
         with rate_limiter:
-            response = client.chat.completions.create(
-                model=model,
-                messages=[
+            request_kwargs = {
+                'model': model,
+                'messages': [
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': user_prompt},
                 ],
-                response_format={'type': 'json_object'},
-                temperature=0,
-                max_tokens=1024,
-            )
+                'temperature': 0,
+                'max_tokens': 1024,
+            }
+            if provider == 'groq':
+                request_kwargs['response_format'] = {'type': 'json_object'}
+            response = client.chat.completions.create(**request_kwargs)
         content = response.choices[0].message.content
         parsed = json.loads(content)
         if not isinstance(parsed, dict):
@@ -91,7 +94,7 @@ def _call_groq_batch(
             for half in (articles[:mid], articles[mid:]):
                 _merge_counts(
                     result,
-                    _call_groq_batch(client, model, symbols, half, rate_limiter),
+                    _call_groq_batch(client, model, symbols, half, rate_limiter, provider),
                 )
             return result
 
@@ -102,7 +105,13 @@ def _call_groq_batch(
             print(f'[news_sentiment] rate limited, retrying in {delay:.1f}s')
             time.sleep(delay)
             return _call_groq_batch(
-                client, model, symbols, articles, rate_limiter, _retried_rate_limit=True
+                client,
+                model,
+                symbols,
+                articles,
+                rate_limiter,
+                provider,
+                _retried_rate_limit=True,
             )
 
         print(f'[news_sentiment] batch failed: {exc}')
@@ -138,7 +147,15 @@ def analyze_articles(
 
     with ThreadPoolExecutor(max_workers=worker_count) as executor:
         futures = [
-            executor.submit(_call_groq_batch, client, config.model, symbols, batch, rate_limiter)
+            executor.submit(
+                _call_groq_batch,
+                client,
+                config.model,
+                symbols,
+                batch,
+                rate_limiter,
+                getattr(config, 'provider', 'groq'),
+            )
             for batch in batches
         ]
         for future in as_completed(futures):

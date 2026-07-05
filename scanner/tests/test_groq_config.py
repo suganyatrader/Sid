@@ -53,3 +53,21 @@ def test_validate_passes_when_api_key_present():
     config = GroqConfig(api_key='test-key')
 
     config.validate()
+
+
+def test_from_env_uses_ollama_when_enabled(monkeypatch):
+    monkeypatch.setenv('USE_OLLAMA', 'true')
+    monkeypatch.setenv('OLLAMA_MODEL', 'qwen2.5:7b')
+    monkeypatch.setenv('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')
+
+    config = GroqConfig.from_env(env_path=Path('/nonexistent/.env'))
+
+    assert config.provider == 'ollama'
+    assert config.model == 'qwen2.5:7b'
+    assert config.base_url == 'http://127.0.0.1:11434'
+
+
+def test_validate_passes_for_ollama_without_api_key():
+    config = GroqConfig(provider='ollama')
+
+    config.validate()
