@@ -4,11 +4,21 @@
       "stock_id": "RELIANCE",
       "symbol": "RELIANCE",
       "sector": "Energy",
-      "sentiment": "buy",
-      "positive_mentions": 4.0,
-      "negative_mentions": 1.0,
-      "margin": 3.0,
-      "score": 44.5
+      "sentiment": "neutral",
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
+      "margin": 0.0,
+      "score": 14.5
+    },
+    {
+      "stock_id": "TCS",
+      "symbol": "TCS",
+      "sector": "IT",
+      "sentiment": "neutral",
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
+      "margin": 0.0,
+      "score": 13.8
     },
     {
       "stock_id": "HDFCBANK",
@@ -25,8 +35,8 @@
       "symbol": "INFY",
       "sector": null,
       "sentiment": "neutral",
-      "positive_mentions": 2.0,
-      "negative_mentions": 2.0,
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
       "margin": 0.0,
       "score": 5.0
     },
@@ -2983,16 +2993,6 @@
     {
       "stock_id": "CAPILLARY",
       "symbol": "CAPILLARY",
-      "sector": null,
-      "sentiment": "neutral",
-      "positive_mentions": 0.0,
-      "negative_mentions": 0.0,
-      "margin": 0.0,
-      "score": 1.0
-    },
-    {
-      "stock_id": "CENTRALBK",
-      "symbol": "CENTRALBK",
       "sector": null,
       "sentiment": "neutral",
       "positive_mentions": 0.0,
@@ -3003,14 +3003,24 @@
   ],
   "short": [
     {
+      "stock_id": "RELIANCE",
+      "symbol": "RELIANCE",
+      "sector": "Energy",
+      "sentiment": "neutral",
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
+      "margin": 0.0,
+      "score": 14.5
+    },
+    {
       "stock_id": "TCS",
       "symbol": "TCS",
       "sector": "IT",
-      "sentiment": "short",
-      "positive_mentions": 1.0,
-      "negative_mentions": 3.0,
-      "margin": 2.0,
-      "score": 33.8
+      "sentiment": "neutral",
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
+      "margin": 0.0,
+      "score": 13.8
     },
     {
       "stock_id": "HDFCBANK",
@@ -3027,8 +3037,8 @@
       "symbol": "INFY",
       "sector": null,
       "sentiment": "neutral",
-      "positive_mentions": 2.0,
-      "negative_mentions": 2.0,
+      "positive_mentions": 0.0,
+      "negative_mentions": 0.0,
       "margin": 0.0,
       "score": 5.0
     },
@@ -5991,17 +6001,7 @@
       "negative_mentions": 0.0,
       "margin": 0.0,
       "score": 1.0
-    },
-    {
-      "stock_id": "CENTRALBK",
-      "symbol": "CENTRALBK",
-      "sector": null,
-      "sentiment": "neutral",
-      "positive_mentions": 0.0,
-      "negative_mentions": 0.0,
-      "margin": 0.0,
-      "score": 1.0
     }
   ],
-  "generated_at": "2026-07-05T07:14:20.274334+00:00"
+  "generated_at": "2026-07-05T12:17:44.197469+00:00"
 }

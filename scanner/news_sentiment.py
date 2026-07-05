@@ -1,11 +1,16 @@
 import json
+import re
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Tuple
 
 from groq_config import GroqConfig
 from rate_limiter import DEFAULT_GROQ_RATE_LIMITS, MultiRateLimiter
 
-ARTICLES_PER_BATCH = 25
+ARTICLES_PER_BATCH = 10
+SUMMARY_MAX_CHARS = 220
+MIN_BATCH_SIZE = 3
+RETRY_AFTER_PATTERN = re.compile(r'try again in ([\d.]+)s', re.IGNORECASE)
 
 SYSTEM_PROMPT_TEMPLATE = (
     'You are a financial news analyst covering the Indian stock market (NSE). '
@@ -31,11 +36,22 @@ def build_batch_prompt(symbols: List[str], articles: List[Dict[str, str]]) -> Tu
     lines = []
     for index, article in enumerate(articles, start=1):
         title = article.get('title', '').strip()
-        summary = article.get('summary', '').strip()
+        summary = article.get('summary', '').strip()[:SUMMARY_MAX_CHARS]
         lines.append(f'{index}. {title} - {summary}')
     user_prompt = '\n'.join(lines)
 
     return system_prompt, user_prompt
+
+
+def _merge_counts(
+    target: Dict[str, Dict[str, int]], source: Dict[str, Dict[str, int]]
+) -> None:
+    for symbol, counts in source.items():
+        if not isinstance(counts, dict):
+            continue
+        entry = target.setdefault(symbol, {'positive': 0, 'negative': 0})
+        entry['positive'] += int(counts.get('positive', 0) or 0)
+        entry['negative'] += int(counts.get('negative', 0) or 0)
 
 
 def _call_groq_batch(
@@ -44,6 +60,7 @@ def _call_groq_batch(
     symbols: List[str],
     articles: List[Dict[str, str]],
     rate_limiter: MultiRateLimiter,
+    _retried_rate_limit: bool = False,
 ) -> Dict[str, Dict[str, int]]:
     system_prompt, user_prompt = build_batch_prompt(symbols, articles)
 
@@ -65,6 +82,29 @@ def _call_groq_batch(
             return {}
         return parsed
     except Exception as exc:
+        message = str(exc)
+        is_too_large = '413' in message or 'too large' in message.lower()
+        if is_too_large and len(articles) > MIN_BATCH_SIZE:
+            mid = len(articles) // 2
+            print(f'[news_sentiment] batch of {len(articles)} too large, splitting and retrying')
+            result: Dict[str, Dict[str, int]] = {}
+            for half in (articles[:mid], articles[mid:]):
+                _merge_counts(
+                    result,
+                    _call_groq_batch(client, model, symbols, half, rate_limiter),
+                )
+            return result
+
+        is_rate_limited = '429' in message or 'rate_limit_exceeded' in message
+        retry_match = RETRY_AFTER_PATTERN.search(message)
+        if is_rate_limited and retry_match and not _retried_rate_limit:
+            delay = min(float(retry_match.group(1)), 60.0)
+            print(f'[news_sentiment] rate limited, retrying in {delay:.1f}s')
+            time.sleep(delay)
+            return _call_groq_batch(
+                client, model, symbols, articles, rate_limiter, _retried_rate_limit=True
+            )
+
         print(f'[news_sentiment] batch failed: {exc}')
         return {}
 
