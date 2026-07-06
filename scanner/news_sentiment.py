@@ -66,6 +66,7 @@ def _call_llm_batch(
     rate_limiter: MultiRateLimiter,
     provider: str = 'groq',
     _retried_rate_limit: bool = False,
+    _timeout_retries: int = 3,
 ) -> Dict[str, Dict[str, int]]:
     system_prompt, user_prompt = build_batch_prompt(symbols, articles)
 
@@ -80,8 +81,7 @@ def _call_llm_batch(
                 'temperature': 0,
                 'max_tokens': 1024,
             }
-            if provider == 'groq':
-                request_kwargs['response_format'] = {'type': 'json_object'}
+            request_kwargs['response_format'] = {'type': 'json_object'}
             response = client.chat.completions.create(**request_kwargs)
         content = response.choices[0].message.content
         parsed = json.loads(content)
@@ -116,6 +116,20 @@ def _call_llm_batch(
                 rate_limiter,
                 provider,
                 _retried_rate_limit=True,
+            )
+
+        is_timeout = any(
+            token in message.lower()
+            for token in ('timeout', 'timed out', 'connection refused', 'connection error')
+        )
+        if is_timeout and _timeout_retries > 0:
+            delay = 2 ** (3 - _timeout_retries + 1)
+            print(f'[news_sentiment] connection error, retrying in {delay}s ({_timeout_retries} left)')
+            time.sleep(delay)
+            return _call_llm_batch(
+                client, model, symbols, articles, rate_limiter, provider,
+                _retried_rate_limit=_retried_rate_limit,
+                _timeout_retries=_timeout_retries - 1,
             )
 
         print(f'[news_sentiment] batch failed: {exc}')

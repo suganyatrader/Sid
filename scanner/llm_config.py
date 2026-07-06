@@ -31,15 +31,14 @@ class OllamaClient:
         }
         if 'max_tokens' in kwargs:
             payload['options']['num_predict'] = kwargs['max_tokens']
-        if 'response_format' in kwargs:
-            payload['format'] = 'json'
+        payload['format'] = 'json'
 
         response = None
         try:
             response = requests.post(
                 f'{self.base_url}/api/chat',
                 json=payload,
-                timeout=180,
+                timeout=(5, 180),
             )
             response.raise_for_status()
             data = response.json()
