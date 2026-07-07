@@ -15,12 +15,10 @@ EXIT_ALERTS_FILE = DATA_DIR / 'exit_alerts.csv'
 DEFAULT_WINDOW_MINUTES = 10.0
 DEFAULT_POLL_INTERVAL_SECONDS = 2.0
 DEFAULT_CONFIRMATION_POLLS = 2
-DEFAULT_TRAILING_STOP_PCT = 0.5
-DEFAULT_VOLUME_SPIKE_MULTIPLIER = 1.5
-DEFAULT_SUPPLY_PRESSURE_RATIO = 1.2
+DEFAULT_DEMAND_SUPPLY_RATIO = 1.2
 VOLUME_DELTA_HISTORY_SIZE = 20
 
-ALL_SIGNAL_NAMES = ['below_entry', 'below_vwap', 'trailing_stop', 'down_volume_spike', 'supply_pressure']
+ALL_SIGNAL_NAMES = ['demand_vs_supply']
 
 
 def _extract_buy_sell_quantities(quote: Dict[str, Any]) -> tuple:
@@ -34,46 +32,33 @@ def _extract_buy_sell_quantities(quote: Dict[str, Any]) -> tuple:
 
 def detect_reversal(
     quote: Dict[str, Any],
-    entry_price: float,
-    peak_price: float,
-    previous_price: Optional[float],
-    previous_volume: Optional[float],
-    average_volume_delta: Optional[float] = None,
-    trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
-    volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
-    supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
+    entry_price: float = 0.0,
+    peak_price: float = 0.0,
+    previous_price: Optional[float] = None,
+    previous_volume: Optional[float] = None,
+    benchmark_ratio: Optional[float] = None,
 ) -> Dict[str, Any]:
     price = _to_number(_extract_quote_value(quote, 'ltp', 'last_price', 'price', 'close'))
     if price is None:
         return {'price': None, 'volume': None, 'peak_price': peak_price, 'signals': []}
 
-    vwap = _to_number(_extract_quote_value(quote, 'vwap', 'vw', 'average_price'))
     volume = _to_number(_extract_quote_value(quote, 'volume', 'total_traded_volume', 'total_volume')) or 0.0
     buy_quantity, sell_quantity = _extract_buy_sell_quantities(quote)
 
     peak_price = max(peak_price, price)
 
     signals: List[str] = []
-    if price < entry_price:
-        signals.append('below_entry')
-    if vwap and price < vwap:
-        signals.append('below_vwap')
-    if peak_price and price <= peak_price * (1 - trailing_stop_pct / 100.0):
-        signals.append('trailing_stop')
-    if previous_price is not None and previous_volume is not None and average_volume_delta and price < previous_price:
-        volume_delta = volume - previous_volume
-        if volume_delta > average_volume_delta * volume_spike_multiplier:
-            signals.append('down_volume_spike')
-    if buy_quantity and sell_quantity and sell_quantity > buy_quantity * supply_pressure_ratio:
-        signals.append('supply_pressure')
+    ratio = (buy_quantity / sell_quantity) if buy_quantity and sell_quantity else None
+    if ratio is not None and benchmark_ratio is not None and ratio < benchmark_ratio:
+        signals.append('demand_vs_supply')
 
     return {
         'price': price,
-        'vwap': vwap,
         'volume': volume,
         'buy_quantity': buy_quantity,
         'sell_quantity': sell_quantity,
         'peak_price': peak_price,
+        'demand_supply_ratio': ratio,
         'signals': signals,
     }
 
@@ -139,13 +124,11 @@ def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[D
 
 def run_exit_monitor(
     stock_id: str,
-    entry_price: float,
+    entry_price: float = 0.0,
     window_minutes: float = DEFAULT_WINDOW_MINUTES,
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     confirmation_polls: int = DEFAULT_CONFIRMATION_POLLS,
-    trailing_stop_pct: float = DEFAULT_TRAILING_STOP_PCT,
-    volume_spike_multiplier: float = DEFAULT_VOLUME_SPIKE_MULTIPLIER,
-    supply_pressure_ratio: float = DEFAULT_SUPPLY_PRESSURE_RATIO,
+    demand_supply_ratio: float = DEFAULT_DEMAND_SUPPLY_RATIO,
     alerts_path: Optional[Path] = None,
     fetch_quote_fn: Optional[Callable[[], Optional[Dict[str, Any]]]] = None,
     sleep_fn: Callable[[float], None] = time.sleep,
@@ -163,6 +146,7 @@ def run_exit_monitor(
     previous_volume: Optional[float] = None
     volume_deltas: List[float] = []
     signal_streaks = {name: 0 for name in ALL_SIGNAL_NAMES}
+    benchmark_ratio: Optional[float] = None
 
     print(
         f'[exit-monitor] Watching {stock_id} for {window_minutes:.1f} min, entry_price={entry_price}, '
@@ -178,16 +162,21 @@ def run_exit_monitor(
 
         average_volume_delta = (sum(volume_deltas) / len(volume_deltas)) if volume_deltas else None
 
+        if benchmark_ratio is None:
+            buy_quantity, sell_quantity = _extract_buy_sell_quantities(quote)
+            if buy_quantity and sell_quantity:
+                benchmark_ratio = buy_quantity / sell_quantity
+                print(f'[exit-monitor] Benchmark ratio for {stock_id}: {benchmark_ratio:.2f}')
+            else:
+                benchmark_ratio = demand_supply_ratio
+
         reading = detect_reversal(
             quote,
             entry_price,
             peak_price,
             previous_price,
             previous_volume,
-            average_volume_delta=average_volume_delta,
-            trailing_stop_pct=trailing_stop_pct,
-            volume_spike_multiplier=volume_spike_multiplier,
-            supply_pressure_ratio=supply_pressure_ratio,
+            benchmark_ratio=benchmark_ratio,
         )
         price = reading['price']
         if price is None:
@@ -235,15 +224,12 @@ def run_exit_monitor(
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='Watch a held intraday position and alert on a momentum reversal')
-    parser.add_argument('--stock-id', required=True, help='Trading symbol of the held position')
-    parser.add_argument('--entry-price', type=float, required=True, help='Price the position was bought at')
+    parser = argparse.ArgumentParser(description='Watch a ticker and alert when its demand-vs-supply ratio weakens from the first benchmark')
+    parser.add_argument('--stock-id', required=True, help='Trading symbol to watch')
     parser.add_argument('--window-minutes', type=float, default=DEFAULT_WINDOW_MINUTES, help='How long to keep watching')
     parser.add_argument('--poll-interval', type=float, default=DEFAULT_POLL_INTERVAL_SECONDS, help='Seconds between quote polls')
     parser.add_argument('--confirmation-polls', type=int, default=DEFAULT_CONFIRMATION_POLLS, help='Consecutive polls a signal must hold before it triggers an alert')
-    parser.add_argument('--trailing-stop-pct', type=float, default=DEFAULT_TRAILING_STOP_PCT, help='Percent drop from peak price that triggers an alert')
-    parser.add_argument('--volume-spike-multiplier', type=float, default=DEFAULT_VOLUME_SPIKE_MULTIPLIER, help='Multiple of the recent average per-poll volume increment that counts as a down-volume spike')
-    parser.add_argument('--supply-pressure-ratio', type=float, default=DEFAULT_SUPPLY_PRESSURE_RATIO, help='Sell-quantity-to-buy-quantity ratio (order book) that counts as supply pressure')
+    parser.add_argument('--demand-supply-ratio', type=float, default=DEFAULT_DEMAND_SUPPLY_RATIO, help='Fallback ratio used if the first quote has no usable order-book quantities')
     parser.add_argument('--exit-alerts-file', type=Path, default=EXIT_ALERTS_FILE, help='CSV file to log alerts to')
     return parser
 
@@ -253,13 +239,10 @@ def main() -> int:
     args = parser.parse_args()
     return run_exit_monitor(
         stock_id=args.stock_id,
-        entry_price=args.entry_price,
         window_minutes=args.window_minutes,
         poll_interval_seconds=args.poll_interval,
         confirmation_polls=args.confirmation_polls,
-        trailing_stop_pct=args.trailing_stop_pct,
-        volume_spike_multiplier=args.volume_spike_multiplier,
-        supply_pressure_ratio=args.supply_pressure_ratio,
+        demand_supply_ratio=args.demand_supply_ratio,
         alerts_path=args.exit_alerts_file,
     )
 
