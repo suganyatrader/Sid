@@ -1,6 +1,4 @@
 import argparse
-import csv
-import datetime
 import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -8,9 +6,6 @@ from typing import Any, Callable, Dict, List, Optional
 from groww_config import GrowwConfig
 from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 from scanner import _extract_quote_value, _to_number
-
-DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
-EXIT_ALERTS_FILE = DATA_DIR / 'exit_alerts.csv'
 
 DEFAULT_WINDOW_MINUTES = 10.0
 DEFAULT_POLL_INTERVAL_SECONDS = 2.0
@@ -48,8 +43,8 @@ def detect_reversal(
     peak_price = max(peak_price, price)
 
     signals: List[str] = []
-    ratio = (buy_quantity / sell_quantity) if buy_quantity and sell_quantity else None
-    if ratio is not None and benchmark_ratio is not None and ratio < benchmark_ratio:
+    buy_percentage = (buy_quantity / (buy_quantity + sell_quantity)) if buy_quantity and sell_quantity else None
+    if buy_percentage is not None and benchmark_ratio is not None and buy_percentage < benchmark_ratio:
         signals.append('demand_vs_supply')
 
     return {
@@ -58,36 +53,9 @@ def detect_reversal(
         'buy_quantity': buy_quantity,
         'sell_quantity': sell_quantity,
         'peak_price': peak_price,
-        'demand_supply_ratio': ratio,
+        'buy_order_percentage': buy_percentage,
         'signals': signals,
     }
-
-
-def append_exit_alert(
-    stock_id: str,
-    price: float,
-    entry_price: float,
-    peak_price: float,
-    signals: List[str],
-    path: Optional[Path] = None,
-) -> None:
-    target = path or EXIT_ALERTS_FILE
-    target.parent.mkdir(parents=True, exist_ok=True)
-    header = ['timestamp', 'stock_id', 'price', 'entry_price', 'peak_price', 'signals']
-    write_header = not target.exists() or target.stat().st_size == 0
-
-    with target.open('a', encoding='utf-8', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        if write_header:
-            writer.writerow(header)
-        writer.writerow([
-            datetime.datetime.now().isoformat(),
-            stock_id,
-            price,
-            entry_price,
-            peak_price,
-            ';'.join(signals),
-        ])
 
 
 def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[Dict[str, Any]]]]:
@@ -129,7 +97,6 @@ def run_exit_monitor(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     confirmation_polls: int = DEFAULT_CONFIRMATION_POLLS,
     demand_supply_ratio: float = DEFAULT_DEMAND_SUPPLY_RATIO,
-    alerts_path: Optional[Path] = None,
     fetch_quote_fn: Optional[Callable[[], Optional[Dict[str, Any]]]] = None,
     sleep_fn: Callable[[float], None] = time.sleep,
     now_fn: Callable[[], float] = time.monotonic,
@@ -165,8 +132,8 @@ def run_exit_monitor(
         if benchmark_ratio is None:
             buy_quantity, sell_quantity = _extract_buy_sell_quantities(quote)
             if buy_quantity and sell_quantity:
-                benchmark_ratio = buy_quantity / sell_quantity
-                print(f'[exit-monitor] Benchmark ratio for {stock_id}: {benchmark_ratio:.2f}')
+                benchmark_ratio = buy_quantity / (buy_quantity + sell_quantity)
+                print(f'[exit-monitor] Benchmark buy percentage for {stock_id}: {benchmark_ratio:.2%}')
             else:
                 benchmark_ratio = demand_supply_ratio
 
@@ -201,7 +168,6 @@ def run_exit_monitor(
                 f"[exit-monitor] ALERT sell {stock_id}: price={price} peak={peak_price} "
                 f"signals={', '.join(confirmed_signals)}"
             )
-            append_exit_alert(stock_id, price, entry_price, peak_price, confirmed_signals, alerts_path)
         else:
             pending = [f'{name}({signal_streaks[name]}/{confirmation_polls})' for name in active_signals]
             pending_note = f" pending: {', '.join(pending)}" if pending else ''
@@ -230,7 +196,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--poll-interval', type=float, default=DEFAULT_POLL_INTERVAL_SECONDS, help='Seconds between quote polls')
     parser.add_argument('--confirmation-polls', type=int, default=DEFAULT_CONFIRMATION_POLLS, help='Consecutive polls a signal must hold before it triggers an alert')
     parser.add_argument('--demand-supply-ratio', type=float, default=DEFAULT_DEMAND_SUPPLY_RATIO, help='Fallback ratio used if the first quote has no usable order-book quantities')
-    parser.add_argument('--exit-alerts-file', type=Path, default=EXIT_ALERTS_FILE, help='CSV file to log alerts to')
     return parser
 
 
@@ -243,7 +208,6 @@ def main() -> int:
         poll_interval_seconds=args.poll_interval,
         confirmation_polls=args.confirmation_polls,
         demand_supply_ratio=args.demand_supply_ratio,
-        alerts_path=args.exit_alerts_file,
     )
 
 
