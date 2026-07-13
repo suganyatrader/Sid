@@ -86,3 +86,18 @@ python scanner.py
 ## Notes
 
 - This first version uses a file-based persistence model for simplicity.
+
+## News-based stock prioritization
+
+Use the separate news prioritizer to rank stocks from the previous day’s news sentiment into two lists:
+
+- `buy`: stocks with more positive than negative mentions
+- `short`: stocks with more negative than positive mentions
+
+Run it from the repository root:
+
+```bash
+python scanner/news_priority.py --top-n 300
+```
+
+The script reads from `data/stock_identifiers.json` and `data/previous_day_news.json`, then writes the ranked output to `data/news_priority_lists.json`.
