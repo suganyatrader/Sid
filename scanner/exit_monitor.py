@@ -1,5 +1,6 @@
 import argparse
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -14,6 +15,11 @@ DEFAULT_DEMAND_SUPPLY_RATIO = 1.2
 VOLUME_DELTA_HISTORY_SIZE = 20
 
 ALL_SIGNAL_NAMES = ['demand_vs_supply']
+
+
+def _exit_monitor_log(message: str) -> None:
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print(f'[{timestamp}] [exit-monitor] {message}', flush=True)
 
 
 def _extract_buy_sell_quantities(quote: Dict[str, Any]) -> tuple:
@@ -62,7 +68,7 @@ def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[D
     config = GrowwConfig.from_env()
     access_token = config.access_token
     if not access_token:
-        print('[exit-monitor] Groww access token not set in .env')
+        _exit_monitor_log('Groww access token not set in .env')
         return None
 
     try:
@@ -70,7 +76,7 @@ def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[D
 
         groww = GrowwAPI(access_token)
     except Exception as exc:
-        print(f'[exit-monitor] Failed to initialize GrowwAPI client: {exc}')
+        _exit_monitor_log(f'Failed to initialize GrowwAPI client: {exc}')
         return None
 
     rate_limiter = MultiRateLimiter(DEFAULT_GROWW_QUOTE_RATE_LIMITS)
@@ -84,7 +90,7 @@ def _build_live_quote_fetcher(stock_id: str) -> Optional[Callable[[], Optional[D
                     trading_symbol=stock_id,
                 )
         except Exception as exc:
-            print(f'[exit-monitor] Failed to fetch quote for {stock_id}: {exc}')
+            _exit_monitor_log(f'Failed to fetch quote for {stock_id}: {exc}')
             return None
 
     return _fetch
@@ -104,7 +110,7 @@ def run_exit_monitor(
     if fetch_quote_fn is None:
         fetch_quote_fn = _build_live_quote_fetcher(stock_id)
         if fetch_quote_fn is None:
-            print('[exit-monitor] No quote source available. Check Groww credentials.')
+            _exit_monitor_log('No quote source available. Check Groww credentials.')
             return 0
 
     deadline = now_fn() + window_minutes * 60
@@ -115,15 +121,15 @@ def run_exit_monitor(
     signal_streaks = {name: 0 for name in ALL_SIGNAL_NAMES}
     benchmark_ratio: Optional[float] = None
 
-    print(
-        f'[exit-monitor] Watching {stock_id} for {window_minutes:.1f} min, entry_price={entry_price}, '
+    _exit_monitor_log(
+        f'Watching {stock_id} for {window_minutes:.1f} min, entry_price={entry_price}, '
         f'confirming signals over {confirmation_polls} consecutive polls'
     )
 
     while now_fn() < deadline:
         quote = fetch_quote_fn()
         if quote is None:
-            print(f'[exit-monitor] Failed to fetch quote for {stock_id}, skipping this poll')
+            _exit_monitor_log(f'Failed to fetch quote for {stock_id}, skipping this poll')
             sleep_fn(poll_interval_seconds)
             continue
 
@@ -133,7 +139,7 @@ def run_exit_monitor(
             buy_quantity, sell_quantity = _extract_buy_sell_quantities(quote)
             if buy_quantity and sell_quantity:
                 benchmark_ratio = buy_quantity / (buy_quantity + sell_quantity)
-                print(f'[exit-monitor] Benchmark buy percentage for {stock_id}: {benchmark_ratio:.2%}')
+                _exit_monitor_log(f'Benchmark buy percentage for {stock_id}: {benchmark_ratio:.2%}')
             else:
                 benchmark_ratio = demand_supply_ratio
 
@@ -147,7 +153,7 @@ def run_exit_monitor(
         )
         price = reading['price']
         if price is None:
-            print(f'[exit-monitor] Quote for {stock_id} had no usable price, skipping this poll')
+            _exit_monitor_log(f'Quote for {stock_id} had no usable price, skipping this poll')
             sleep_fn(poll_interval_seconds)
             continue
 
@@ -164,14 +170,14 @@ def run_exit_monitor(
                 confirmed_signals.append(name)
 
         if confirmed_signals:
-            print(
-                f"[exit-monitor] ALERT sell {stock_id}: price={price} peak={peak_price} "
+            _exit_monitor_log(
+                f"ALERT sell {stock_id}: price={price} peak={peak_price} "
                 f"signals={', '.join(confirmed_signals)}"
             )
         else:
             pending = [f'{name}({signal_streaks[name]}/{confirmation_polls})' for name in active_signals]
             pending_note = f" pending: {', '.join(pending)}" if pending else ''
-            print(f'[exit-monitor] {stock_id} holding: price={price} peak={peak_price}{pending_note}')
+            _exit_monitor_log(f'{stock_id} holding: price={price} peak={peak_price}{pending_note}')
 
         if reading['volume'] is not None and previous_volume is not None:
             delta = reading['volume'] - previous_volume
@@ -185,7 +191,7 @@ def run_exit_monitor(
         if now_fn() < deadline:
             sleep_fn(poll_interval_seconds)
 
-    print(f'[exit-monitor] Monitoring window closed for {stock_id}')
+    _exit_monitor_log(f'Monitoring window closed for {stock_id}')
     return 1
 
 
