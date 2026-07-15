@@ -181,22 +181,41 @@ def append_trade_log(stock_id: str, action: str, price: float, volume: int, pnl:
     target.parent.mkdir(parents=True, exist_ok=True)
     header = ['trade_id', 'stock_id', 'action', 'price', 'volume', 'timestamp', 'pnl']
     next_id = 1
+    had_valid_header = False
+    existing_rows: list[list[str]] = []
 
     if target.exists():
         with target.open('r', encoding='utf-8', newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            rows = list(reader)
-            if rows:
-                next_id = int(rows[-1]['trade_id']) + 1
+            existing_rows = list(csv.reader(csvfile))
 
-    with target.open('a', encoding='utf-8', newline='') as csvfile:
+        if existing_rows:
+            first_row = existing_rows[0]
+            if first_row == header:
+                had_valid_header = True
+                for row in existing_rows[1:]:
+                    if row and row[0].strip().isdigit():
+                        next_id = max(next_id, int(row[0].strip()) + 1)
+            else:
+                # Recover from older/manual files without headers by inferring IDs
+                # from the first column when possible.
+                for row in existing_rows:
+                    if row and row[0].strip().isdigit():
+                        next_id = max(next_id, int(row[0].strip()) + 1)
+
+    write_mode = 'a'
+    if target.exists() and existing_rows and not had_valid_header:
+        write_mode = 'w'
+
+    with target.open(write_mode, encoding='utf-8', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        if next_id == 1 and not target.exists():
+        if write_mode == 'w':
             writer.writerow(header)
-        elif next_id == 1:
-            with target.open('r', encoding='utf-8', newline='') as existing:
-                if not existing.read(1):
-                    writer.writerow(header)
+            for row in existing_rows:
+                if row and row[0].strip().isdigit():
+                    writer.writerow(row)
+        elif not target.exists() or target.stat().st_size == 0:
+            writer.writerow(header)
+
         writer.writerow([next_id, stock_id, action, price, volume, datetime.datetime.now().isoformat(), pnl])
 
 
