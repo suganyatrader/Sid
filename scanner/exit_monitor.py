@@ -8,7 +8,7 @@ from groww_config import GrowwConfig
 from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 from scanner import _extract_quote_value, _to_number
 
-DEFAULT_WINDOW_MINUTES = 10.0
+DEFAULT_WINDOW_MINUTES = 20.0
 DEFAULT_POLL_INTERVAL_SECONDS = 2.0
 DEFAULT_CONFIRMATION_POLLS = 2
 DEFAULT_DEMAND_SUPPLY_RATIO = 1.2
