@@ -72,7 +72,7 @@ If you cannot use a secret, you may supply a current TOTP value directly:
 GROWW_API_KEY=your_api_key
 GROWW_TOTP_TOKEN=123456
 ```
-> Note: The current scanner uses `data/stock_identifiers.json` for stock symbols. `STOCK_IDS` and `GROWW_BASE_URL` in `.env` are not used by the current scanner flow.4. Run the scanner:
+> Note: The current scanner uses `scanner/stock_identifiers.json` for stock symbols. `STOCK_IDS` and `GROWW_BASE_URL` in `.env` are not used by the current scanner flow.4. Run the scanner:
 
 ```bash
 python scanner.py

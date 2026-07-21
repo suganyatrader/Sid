@@ -12,7 +12,8 @@ from groww_config import GrowwConfig
 from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 
 DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
-STOCK_IDENTIFIERS_FILE = DATA_DIR / 'stock_identifiers.json'
+SCANNER_DIR = Path(__file__).resolve().parent
+STOCK_IDENTIFIERS_FILE = SCANNER_DIR / 'stock_identifiers.json'
 TRADE_LOG_FILE = DATA_DIR / 'trade_logs.csv'
 DEFAULT_INDEX_HEAVY_SYMBOLS = {
     'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'HUL', 'SBI', 'ITC', 'LT', 'BHARTIARTL',

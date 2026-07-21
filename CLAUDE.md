@@ -15,7 +15,7 @@ python -m pytest tests/                     # run all tests
 python scanner.py                           # run the momentum scanner (fetches live quotes, simulates trades)
 python scanner.py --no-simulate --sample-size 20 --top-n 5   # dry run against a random subset
 
-python update_stock_identifier.py --discover              # populate data/stock_identifiers.json from Groww's instrument catalog
+python update_stock_identifier.py --discover              # populate scanner/stock_identifiers.json from Groww's instrument catalog
 python update_stock_identifier.py --stock-id RELIANCE      # refresh a single identifier's Groww symbol/quote
 ```
 
@@ -46,7 +46,7 @@ Config is loaded from `scanner/.env` (via `python-dotenv`, falling back to a han
 
 This is a file-based (no DB, no server) intraday trading utility for NSE stocks, built around independent CLI scripts in `scanner/` that share on-disk JSON/CSV as their integration point:
 
-- **`update_stock_identifier.py`** — populates/refreshes `data/stock_identifiers.json`, the master list of tradable stocks. `--discover` pulls NSE cash instruments flagged `is_intraday` from `GrowwAPI.get_all_instruments()` (falling back to a hardcoded `DEFAULT_INTRADAY_SYMBOLS` list of ~45 index-heavy names if the API call fails). Per-symbol updates fetch a live quote to confirm the symbol resolves and cache it as `last_quote`.
+- **`update_stock_identifier.py`** — populates/refreshes `scanner/stock_identifiers.json`, the master list of tradable stocks. `--discover` pulls NSE cash instruments flagged `is_intraday` from `GrowwAPI.get_all_instruments()` (falling back to a hardcoded `DEFAULT_INTRADAY_SYMBOLS` list of ~45 index-heavy names if the API call fails). Per-symbol updates fetch a live quote to confirm the symbol resolves and cache it as `last_quote`.
 
 - **`scanner.py`** — the live momentum scanner. Reads `data/stock_identifiers.json`, fetches live quotes concurrently via a `ThreadPoolExecutor` (rate-limited — see below), scores each stock with `detect_momentum()` (breakout / bullish_vwap / volume_spike / momentum_volume signals) and `rank_signal()` (weights momentum, volume ratio, liquidity_score, and index relevance), then prints the ranked list and simulates BUY trades by appending to `data/trade_logs.csv`. Quote field lookups (`ltp`, `previous_close`, `vwap`, etc.) go through `_extract_quote_value()`, which also recurses into nested `last_quote`/`quote`/`ohlc`/`market` dicts — the Groww SDK's response shape is not fully consistent, so this normalization layer matters.
 
