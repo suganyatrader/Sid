@@ -87,17 +87,18 @@ python scanner.py
 
 - This first version uses a file-based persistence model for simplicity.
 
-## News-based stock prioritization
 
-Use the separate news prioritizer to rank stocks from the previous day’s news sentiment into two lists:
+## NSE post-close dashboard scraper
 
-- `buy`: stocks with more positive than negative mentions
-- `short`: stocks with more negative than positive mentions
-
-Run it from the repository root:
+Use this script to scrape NSE corporate filing dashboards after market close, download relevant files, and output ticker symbols involved:
 
 ```bash
-python scanner/news_priority.py --top-n 300
+python scanner/nse_postclose_scraper.py --target-date 2026-07-09
 ```
 
-The script reads from `data/stock_identifiers.json` and `data/previous_day_news.json`, then writes the ranked output to `data/news_priority_lists.json`.
+Default outputs:
+
+- `data/nse_postclose_symbols.txt` — ticker symbols only (one per line)
+- `data/nse_postclose_failures.json` — per-stock failures (with request retries + exponential backoff)
+- `data/nse_postclose_summary.json` — summary counts
+- `data/nse_postclose_downloads/` — downloaded corporate attachments and same-day daily reports
