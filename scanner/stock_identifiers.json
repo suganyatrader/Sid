@@ -10,7 +10,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 4.3799999999999955,
+      "day_change_perc": 2.0743547241297633,
+      "upper_circuit_limit": 253.38,
+      "lower_circuit_limit": 168.92,
+      "ohlc": {
+        "open": 211.15,
+        "high": 217.9,
+        "low": 208.64,
+        "close": 211.15
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 215.74,
+            "quantity": 7,
+            "orderCount": 1
+          },
+          {
+            "price": 215.73,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 215.71,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 215.69,
+            "quantity": 3,
+            "orderCount": 1
+          },
+          {
+            "price": 215.68,
+            "quantity": 17,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 215.99,
+            "quantity": 2,
+            "orderCount": 2
+          },
+          {
+            "price": 216.0,
+            "quantity": 12,
+            "orderCount": 2
+          },
+          {
+            "price": 216.13,
+            "quantity": 16,
+            "orderCount": 1
+          },
+          {
+            "price": 216.14,
+            "quantity": 17,
+            "orderCount": 1
+          },
+          {
+            "price": 216.19,
+            "quantity": 48,
+            "orderCount": 2
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781275,
+      "low_trade_range": null,
+      "last_price": 215.53,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 99648,
+      "total_sell_quantity": 92154,
+      "volume": 129300,
+      "week_52_high": 283.93,
+      "week_52_low": 129.61
+    }
   },
   {
     "stock_id": "360ONE",
@@ -23,7 +112,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 0.900000000000091,
+      "day_change_perc": 0.08229700073153721,
+      "upper_circuit_limit": 1202.9,
+      "lower_circuit_limit": 984.3,
+      "ohlc": {
+        "open": 1080.0,
+        "high": 1096.0,
+        "low": 1073.9,
+        "close": 1093.6
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 1094.5,
+            "quantity": 20,
+            "orderCount": 2
+          },
+          {
+            "price": 1094.4,
+            "quantity": 12,
+            "orderCount": 2
+          },
+          {
+            "price": 1094.3,
+            "quantity": 72,
+            "orderCount": 5
+          },
+          {
+            "price": 1094.2,
+            "quantity": 83,
+            "orderCount": 3
+          },
+          {
+            "price": 1094.1,
+            "quantity": 86,
+            "orderCount": 5
+          }
+        ],
+        "sell": [
+          {
+            "price": 1095.0,
+            "quantity": 589,
+            "orderCount": 6
+          },
+          {
+            "price": 1095.1,
+            "quantity": 54,
+            "orderCount": 2
+          },
+          {
+            "price": 1095.2,
+            "quantity": 32,
+            "orderCount": 3
+          },
+          {
+            "price": 1095.3,
+            "quantity": 48,
+            "orderCount": 5
+          },
+          {
+            "price": 1095.4,
+            "quantity": 115,
+            "orderCount": 7
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781284,
+      "low_trade_range": null,
+      "last_price": 1094.5,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 126524,
+      "total_sell_quantity": 60155,
+      "volume": 136545,
+      "week_52_high": 1236.2,
+      "week_52_low": 906.05
+    }
   },
   {
     "stock_id": "3BBLACKBIO",
@@ -36,7 +214,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 9.300000000000182,
+      "day_change_perc": 0.7211538461538604,
+      "upper_circuit_limit": 1547.5,
+      "lower_circuit_limit": 1031.7,
+      "ohlc": {
+        "open": 1287.0,
+        "high": 1319.4,
+        "low": 1276.1,
+        "close": 1289.6
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 1296.3,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 1295.8,
+            "quantity": 25,
+            "orderCount": 1
+          },
+          {
+            "price": 1295.1,
+            "quantity": 20,
+            "orderCount": 1
+          },
+          {
+            "price": 1294.7,
+            "quantity": 5,
+            "orderCount": 1
+          },
+          {
+            "price": 1292.7,
+            "quantity": 3,
+            "orderCount": 2
+          }
+        ],
+        "sell": [
+          {
+            "price": 1297.9,
+            "quantity": 3,
+            "orderCount": 2
+          },
+          {
+            "price": 1298.0,
+            "quantity": 178,
+            "orderCount": 1
+          },
+          {
+            "price": 1298.4,
+            "quantity": 3,
+            "orderCount": 1
+          },
+          {
+            "price": 1299.4,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 1299.5,
+            "quantity": 1,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 3,
+      "last_trade_time": 1784781090,
+      "low_trade_range": null,
+      "last_price": 1298.9,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 2053,
+      "total_sell_quantity": 4057,
+      "volume": 1427,
+      "week_52_high": 1441.5,
+      "week_52_low": 1085.0
+    }
   },
   {
     "stock_id": "3MINDIA",
@@ -49,7 +316,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 150.0,
+      "day_change_perc": 0.4198740377886634,
+      "upper_circuit_limit": 42870.0,
+      "lower_circuit_limit": 28580.0,
+      "ohlc": {
+        "open": 35600.0,
+        "high": 36030.0,
+        "low": 35510.0,
+        "close": 35725.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 35825.0,
+            "quantity": 2,
+            "orderCount": 2
+          },
+          {
+            "price": 35820.0,
+            "quantity": 12,
+            "orderCount": 3
+          },
+          {
+            "price": 35810.0,
+            "quantity": 2,
+            "orderCount": 2
+          },
+          {
+            "price": 35805.0,
+            "quantity": 6,
+            "orderCount": 6
+          },
+          {
+            "price": 35800.0,
+            "quantity": 4,
+            "orderCount": 3
+          }
+        ],
+        "sell": [
+          {
+            "price": 35875.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 35880.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 35890.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 35895.0,
+            "quantity": 3,
+            "orderCount": 3
+          },
+          {
+            "price": 35900.0,
+            "quantity": 7,
+            "orderCount": 2
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781159,
+      "low_trade_range": null,
+      "last_price": 35875.0,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 1125,
+      "total_sell_quantity": 1924,
+      "volume": 758,
+      "week_52_high": 38030.0,
+      "week_52_low": 28730.0
+    }
   },
   {
     "stock_id": "5PAISA",
@@ -62,7 +418,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 2.3000000000000114,
+      "day_change_perc": 0.6217056358967459,
+      "upper_circuit_limit": 443.9,
+      "lower_circuit_limit": 296.0,
+      "ohlc": {
+        "open": 367.05,
+        "high": 373.2,
+        "low": 366.05,
+        "close": 369.95
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 372.55,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 372.4,
+            "quantity": 26,
+            "orderCount": 1
+          },
+          {
+            "price": 372.35,
+            "quantity": 10,
+            "orderCount": 1
+          },
+          {
+            "price": 372.2,
+            "quantity": 9,
+            "orderCount": 1
+          },
+          {
+            "price": 372.15,
+            "quantity": 7,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 373.0,
+            "quantity": 10,
+            "orderCount": 1
+          },
+          {
+            "price": 373.1,
+            "quantity": 21,
+            "orderCount": 1
+          },
+          {
+            "price": 373.15,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 373.4,
+            "quantity": 7,
+            "orderCount": 1
+          },
+          {
+            "price": 373.85,
+            "quantity": 14,
+            "orderCount": 2
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781186,
+      "low_trade_range": null,
+      "last_price": 372.25,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 50726,
+      "total_sell_quantity": 15893,
+      "volume": 5143,
+      "week_52_high": 403.35,
+      "week_52_low": 245.5
+    }
   },
   {
     "stock_id": "63MOONS",
@@ -75,7 +520,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -5.899999999999977,
+      "day_change_perc": -0.8369981557667723,
+      "upper_circuit_limit": 845.85,
+      "lower_circuit_limit": 563.95,
+      "ohlc": {
+        "open": 699.3,
+        "high": 701.0,
+        "low": 694.1,
+        "close": 704.9
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 699.0,
+            "quantity": 82,
+            "orderCount": 1
+          },
+          {
+            "price": 698.65,
+            "quantity": 56,
+            "orderCount": 1
+          },
+          {
+            "price": 698.6,
+            "quantity": 12,
+            "orderCount": 1
+          },
+          {
+            "price": 698.3,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 698.25,
+            "quantity": 5,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 699.5,
+            "quantity": 51,
+            "orderCount": 3
+          },
+          {
+            "price": 699.9,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 699.95,
+            "quantity": 32,
+            "orderCount": 2
+          },
+          {
+            "price": 700.05,
+            "quantity": 13,
+            "orderCount": 1
+          },
+          {
+            "price": 700.1,
+            "quantity": 13,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 18,
+      "last_trade_time": 1784781279,
+      "low_trade_range": null,
+      "last_price": 699.0,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 29736,
+      "total_sell_quantity": 29496,
+      "volume": 17967,
+      "week_52_high": 1111.7,
+      "week_52_low": 467.0
+    }
   },
   {
     "stock_id": "AADHARHFC",
@@ -88,7 +622,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -4.050000000000011,
+      "day_change_perc": -0.7937285644292036,
+      "upper_circuit_limit": 612.3,
+      "lower_circuit_limit": 408.2,
+      "ohlc": {
+        "open": 509.95,
+        "high": 510.25,
+        "low": 503.5,
+        "close": 510.25
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 506.2,
+            "quantity": 59,
+            "orderCount": 4
+          },
+          {
+            "price": 506.15,
+            "quantity": 44,
+            "orderCount": 5
+          },
+          {
+            "price": 506.1,
+            "quantity": 58,
+            "orderCount": 4
+          },
+          {
+            "price": 506.05,
+            "quantity": 97,
+            "orderCount": 6
+          },
+          {
+            "price": 506.0,
+            "quantity": 168,
+            "orderCount": 4
+          }
+        ],
+        "sell": [
+          {
+            "price": 506.8,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 506.85,
+            "quantity": 3,
+            "orderCount": 2
+          },
+          {
+            "price": 506.95,
+            "quantity": 42,
+            "orderCount": 4
+          },
+          {
+            "price": 507.0,
+            "quantity": 45,
+            "orderCount": 1
+          },
+          {
+            "price": 507.05,
+            "quantity": 16,
+            "orderCount": 2
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 9,
+      "last_trade_time": 1784781282,
+      "low_trade_range": null,
+      "last_price": 506.2,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 46582,
+      "total_sell_quantity": 70304,
+      "volume": 18271,
+      "week_52_high": 563.0,
+      "week_52_low": 430.15
+    }
   },
   {
     "stock_id": "AARTIDRUGS",
@@ -101,7 +724,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -1.5500000000000114,
+      "day_change_perc": -0.3762135922330125,
+      "upper_circuit_limit": 494.4,
+      "lower_circuit_limit": 329.6,
+      "ohlc": {
+        "open": 411.0,
+        "high": 412.9,
+        "low": 406.55,
+        "close": 412.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 410.15,
+            "quantity": 16,
+            "orderCount": 1
+          },
+          {
+            "price": 410.1,
+            "quantity": 12,
+            "orderCount": 1
+          },
+          {
+            "price": 410.05,
+            "quantity": 44,
+            "orderCount": 2
+          },
+          {
+            "price": 410.0,
+            "quantity": 183,
+            "orderCount": 1
+          },
+          {
+            "price": 409.8,
+            "quantity": 16,
+            "orderCount": 2
+          }
+        ],
+        "sell": [
+          {
+            "price": 410.7,
+            "quantity": 15,
+            "orderCount": 1
+          },
+          {
+            "price": 410.75,
+            "quantity": 10,
+            "orderCount": 1
+          },
+          {
+            "price": 410.9,
+            "quantity": 44,
+            "orderCount": 3
+          },
+          {
+            "price": 410.95,
+            "quantity": 10,
+            "orderCount": 1
+          },
+          {
+            "price": 411.1,
+            "quantity": 6,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 11,
+      "last_trade_time": 1784781236,
+      "low_trade_range": null,
+      "last_price": 410.45,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 28955,
+      "total_sell_quantity": 28679,
+      "volume": 15137,
+      "week_52_high": 551.75,
+      "week_52_low": 318.95
+    }
   },
   {
     "stock_id": "AARTIIND",
@@ -114,7 +826,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -6.449999999999989,
+      "day_change_perc": -1.3005343280572617,
+      "upper_circuit_limit": 595.1,
+      "lower_circuit_limit": 396.8,
+      "ohlc": {
+        "open": 493.1,
+        "high": 493.1,
+        "low": 486.1,
+        "close": 495.95
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 489.5,
+            "quantity": 23,
+            "orderCount": 1
+          },
+          {
+            "price": 489.45,
+            "quantity": 38,
+            "orderCount": 2
+          },
+          {
+            "price": 489.4,
+            "quantity": 49,
+            "orderCount": 2
+          },
+          {
+            "price": 489.35,
+            "quantity": 90,
+            "orderCount": 5
+          },
+          {
+            "price": 489.3,
+            "quantity": 105,
+            "orderCount": 5
+          }
+        ],
+        "sell": [
+          {
+            "price": 489.85,
+            "quantity": 34,
+            "orderCount": 1
+          },
+          {
+            "price": 489.9,
+            "quantity": 82,
+            "orderCount": 3
+          },
+          {
+            "price": 489.95,
+            "quantity": 13,
+            "orderCount": 2
+          },
+          {
+            "price": 490.0,
+            "quantity": 473,
+            "orderCount": 11
+          },
+          {
+            "price": 490.05,
+            "quantity": 6,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 14,
+      "last_trade_time": 1784781286,
+      "low_trade_range": null,
+      "last_price": 489.5,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 92485,
+      "total_sell_quantity": 247695,
+      "volume": 95761,
+      "week_52_high": 523.1,
+      "week_52_low": 338.05
+    }
   },
   {
     "stock_id": "AARTIPHARM",
@@ -127,7 +928,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -4.2000000000000455,
+      "day_change_perc": -0.6243496357960525,
+      "upper_circuit_limit": 807.2,
+      "lower_circuit_limit": 538.2,
+      "ohlc": {
+        "open": 669.0,
+        "high": 677.85,
+        "low": 654.0,
+        "close": 672.7
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 668.8,
+            "quantity": 36,
+            "orderCount": 4
+          },
+          {
+            "price": 668.7,
+            "quantity": 11,
+            "orderCount": 1
+          },
+          {
+            "price": 668.65,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 668.6,
+            "quantity": 24,
+            "orderCount": 2
+          },
+          {
+            "price": 668.55,
+            "quantity": 4,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 669.3,
+            "quantity": 48,
+            "orderCount": 1
+          },
+          {
+            "price": 669.4,
+            "quantity": 17,
+            "orderCount": 5
+          },
+          {
+            "price": 669.5,
+            "quantity": 3,
+            "orderCount": 1
+          },
+          {
+            "price": 669.55,
+            "quantity": 11,
+            "orderCount": 1
+          },
+          {
+            "price": 669.6,
+            "quantity": 29,
+            "orderCount": 4
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 3,
+      "last_trade_time": 1784781262,
+      "low_trade_range": null,
+      "last_price": 668.5,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 43901,
+      "total_sell_quantity": 28424,
+      "volume": 120932,
+      "week_52_high": 969.5,
+      "week_52_low": 585.0
+    }
   },
   {
     "stock_id": "AAVAS",
@@ -140,7 +1030,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -51.0,
+      "day_change_perc": -3.53185595567867,
+      "upper_circuit_limit": 1732.8,
+      "lower_circuit_limit": 1155.2,
+      "ohlc": {
+        "open": 1422.2,
+        "high": 1440.0,
+        "low": 1387.4,
+        "close": 1444.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 1392.7,
+            "quantity": 174,
+            "orderCount": 2
+          },
+          {
+            "price": 1392.6,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 1392.5,
+            "quantity": 6,
+            "orderCount": 2
+          },
+          {
+            "price": 1392.4,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 1392.3,
+            "quantity": 4,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 1393.0,
+            "quantity": 60,
+            "orderCount": 4
+          },
+          {
+            "price": 1393.3,
+            "quantity": 17,
+            "orderCount": 1
+          },
+          {
+            "price": 1393.4,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 1393.5,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 1393.6,
+            "quantity": 4,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781284,
+      "low_trade_range": null,
+      "last_price": 1393.0,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 19503,
+      "total_sell_quantity": 20334,
+      "volume": 26799,
+      "week_52_high": 1949.0,
+      "week_52_low": 1060.4
+    }
   },
   {
     "stock_id": "ABB",
@@ -153,7 +1132,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 111.5,
+      "day_change_perc": 1.4854782840394352,
+      "upper_circuit_limit": 8256.5,
+      "lower_circuit_limit": 6755.5,
+      "ohlc": {
+        "open": 7519.0,
+        "high": 7631.0,
+        "low": 7486.0,
+        "close": 7506.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 7617.0,
+            "quantity": 5,
+            "orderCount": 1
+          },
+          {
+            "price": 7616.5,
+            "quantity": 12,
+            "orderCount": 4
+          },
+          {
+            "price": 7616.0,
+            "quantity": 24,
+            "orderCount": 4
+          },
+          {
+            "price": 7615.5,
+            "quantity": 7,
+            "orderCount": 1
+          },
+          {
+            "price": 7615.0,
+            "quantity": 61,
+            "orderCount": 10
+          }
+        ],
+        "sell": [
+          {
+            "price": 7620.0,
+            "quantity": 458,
+            "orderCount": 19
+          },
+          {
+            "price": 7620.5,
+            "quantity": 35,
+            "orderCount": 5
+          },
+          {
+            "price": 7621.0,
+            "quantity": 75,
+            "orderCount": 6
+          },
+          {
+            "price": 7621.5,
+            "quantity": 40,
+            "orderCount": 5
+          },
+          {
+            "price": 7622.0,
+            "quantity": 24,
+            "orderCount": 5
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 37,
+      "last_trade_time": 1784781288,
+      "low_trade_range": null,
+      "last_price": 7617.5,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 32358,
+      "total_sell_quantity": 31716,
+      "volume": 77938,
+      "week_52_high": 7924.5,
+      "week_52_low": 4637.5
+    }
   },
   {
     "stock_id": "ABBOTINDIA",
@@ -166,7 +1234,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -185.0,
+      "day_change_perc": -0.6401384083044983,
+      "upper_circuit_limit": 34680.0,
+      "lower_circuit_limit": 23120.0,
+      "ohlc": {
+        "open": 28905.0,
+        "high": 28905.0,
+        "low": 28585.0,
+        "close": 28900.0
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 28715.0,
+            "quantity": 4,
+            "orderCount": 1
+          },
+          {
+            "price": 28705.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 28700.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 28695.0,
+            "quantity": 5,
+            "orderCount": 5
+          },
+          {
+            "price": 28690.0,
+            "quantity": 10,
+            "orderCount": 6
+          }
+        ],
+        "sell": [
+          {
+            "price": 28720.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 28735.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 28740.0,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 28745.0,
+            "quantity": 13,
+            "orderCount": 5
+          },
+          {
+            "price": 28750.0,
+            "quantity": 31,
+            "orderCount": 9
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781268,
+      "low_trade_range": null,
+      "last_price": 28715.0,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 2196,
+      "total_sell_quantity": 3163,
+      "volume": 2560,
+      "week_52_high": 35310.0,
+      "week_52_low": 25150.0
+    }
   },
   {
     "stock_id": "ABCAPITAL",
@@ -179,7 +1336,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -2.4500000000000455,
+      "day_change_perc": -0.61158262606092,
+      "upper_circuit_limit": 440.65,
+      "lower_circuit_limit": 360.55,
+      "ohlc": {
+        "open": 399.0,
+        "high": 399.05,
+        "low": 392.2,
+        "close": 400.6
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 398.0,
+            "quantity": 5704,
+            "orderCount": 11
+          },
+          {
+            "price": 397.95,
+            "quantity": 366,
+            "orderCount": 5
+          },
+          {
+            "price": 397.9,
+            "quantity": 1864,
+            "orderCount": 12
+          },
+          {
+            "price": 397.85,
+            "quantity": 481,
+            "orderCount": 6
+          },
+          {
+            "price": 397.8,
+            "quantity": 1960,
+            "orderCount": 13
+          }
+        ],
+        "sell": [
+          {
+            "price": 398.25,
+            "quantity": 706,
+            "orderCount": 5
+          },
+          {
+            "price": 398.3,
+            "quantity": 189,
+            "orderCount": 1
+          },
+          {
+            "price": 398.35,
+            "quantity": 278,
+            "orderCount": 1
+          },
+          {
+            "price": 398.4,
+            "quantity": 1366,
+            "orderCount": 11
+          },
+          {
+            "price": 398.45,
+            "quantity": 523,
+            "orderCount": 3
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 5,
+      "last_trade_time": 1784781284,
+      "low_trade_range": null,
+      "last_price": 398.15,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 652820,
+      "total_sell_quantity": 411390,
+      "volume": 806707,
+      "week_52_high": 411.4,
+      "week_52_low": 243.0
+    }
   },
   {
     "stock_id": "ABCOTS",
@@ -192,7 +1438,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 1.2299999999999898,
+      "day_change_perc": 0.6024981631153513,
+      "upper_circuit_limit": 244.98,
+      "lower_circuit_limit": 163.32,
+      "ohlc": {
+        "open": 205.0,
+        "high": 211.0,
+        "low": 204.0,
+        "close": 204.15
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 204.82,
+            "quantity": 25,
+            "orderCount": 1
+          },
+          {
+            "price": 204.81,
+            "quantity": 1,
+            "orderCount": 1
+          },
+          {
+            "price": 204.72,
+            "quantity": 2,
+            "orderCount": 1
+          },
+          {
+            "price": 204.61,
+            "quantity": 16,
+            "orderCount": 3
+          },
+          {
+            "price": 204.51,
+            "quantity": 2,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 205.38,
+            "quantity": 25,
+            "orderCount": 1
+          },
+          {
+            "price": 205.39,
+            "quantity": 10,
+            "orderCount": 1
+          },
+          {
+            "price": 205.46,
+            "quantity": 3,
+            "orderCount": 1
+          },
+          {
+            "price": 205.59,
+            "quantity": 16,
+            "orderCount": 3
+          },
+          {
+            "price": 205.77,
+            "quantity": 10,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 1,
+      "last_trade_time": 1784781198,
+      "low_trade_range": null,
+      "last_price": 205.38,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 24575,
+      "total_sell_quantity": 9999,
+      "volume": 2667,
+      "week_52_high": 504.0,
+      "week_52_low": 197.69
+    }
   },
   {
     "stock_id": "ABDL",
@@ -205,7 +1540,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 1.5,
+      "day_change_perc": 0.2436251421146662,
+      "upper_circuit_limit": 677.25,
+      "lower_circuit_limit": 554.15,
+      "ohlc": {
+        "open": 613.9,
+        "high": 623.4,
+        "low": 613.05,
+        "close": 615.7
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 616.75,
+            "quantity": 39,
+            "orderCount": 6
+          },
+          {
+            "price": 616.7,
+            "quantity": 8,
+            "orderCount": 3
+          },
+          {
+            "price": 616.6,
+            "quantity": 26,
+            "orderCount": 1
+          },
+          {
+            "price": 616.55,
+            "quantity": 27,
+            "orderCount": 2
+          },
+          {
+            "price": 616.5,
+            "quantity": 8,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 617.2,
+            "quantity": 15,
+            "orderCount": 1
+          },
+          {
+            "price": 617.25,
+            "quantity": 32,
+            "orderCount": 1
+          },
+          {
+            "price": 617.3,
+            "quantity": 49,
+            "orderCount": 2
+          },
+          {
+            "price": 617.4,
+            "quantity": 27,
+            "orderCount": 2
+          },
+          {
+            "price": 617.5,
+            "quantity": 6,
+            "orderCount": 2
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 8,
+      "last_trade_time": 1784781286,
+      "low_trade_range": null,
+      "last_price": 617.2,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 30838,
+      "total_sell_quantity": 46578,
+      "volume": 23045,
+      "week_52_high": 711.7,
+      "week_52_low": 382.1
+    }
   },
   {
     "stock_id": "ABFRL",
@@ -218,7 +1642,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 0.030000000000001137,
+      "day_change_perc": 0.05258545135845949,
+      "upper_circuit_limit": 68.46,
+      "lower_circuit_limit": 45.64,
+      "ohlc": {
+        "open": 57.0,
+        "high": 57.16,
+        "low": 56.56,
+        "close": 57.05
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 57.06,
+            "quantity": 1453,
+            "orderCount": 4
+          },
+          {
+            "price": 57.05,
+            "quantity": 96,
+            "orderCount": 3
+          },
+          {
+            "price": 57.04,
+            "quantity": 82,
+            "orderCount": 2
+          },
+          {
+            "price": 57.03,
+            "quantity": 981,
+            "orderCount": 6
+          },
+          {
+            "price": 57.02,
+            "quantity": 41,
+            "orderCount": 1
+          }
+        ],
+        "sell": [
+          {
+            "price": 57.12,
+            "quantity": 770,
+            "orderCount": 3
+          },
+          {
+            "price": 57.13,
+            "quantity": 175,
+            "orderCount": 1
+          },
+          {
+            "price": 57.14,
+            "quantity": 944,
+            "orderCount": 7
+          },
+          {
+            "price": 57.15,
+            "quantity": 1379,
+            "orderCount": 7
+          },
+          {
+            "price": 57.16,
+            "quantity": 914,
+            "orderCount": 7
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 401,
+      "last_trade_time": 1784781327,
+      "low_trade_range": null,
+      "last_price": 57.08,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 608723,
+      "total_sell_quantity": 999954,
+      "volume": 275221,
+      "week_52_high": 94.95,
+      "week_52_low": 53.51
+    }
   },
   {
     "stock_id": "ABINFRA",
@@ -231,7 +1744,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": -0.10999999999999943,
+      "day_change_perc": -1.078431372549014,
+      "upper_circuit_limit": 12.24,
+      "lower_circuit_limit": 8.16,
+      "ohlc": {
+        "open": 10.12,
+        "high": 10.17,
+        "low": 10.02,
+        "close": 10.2
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 10.09,
+            "quantity": 1076,
+            "orderCount": 2
+          },
+          {
+            "price": 10.08,
+            "quantity": 2,
+            "orderCount": 2
+          },
+          {
+            "price": 10.07,
+            "quantity": 635,
+            "orderCount": 4
+          },
+          {
+            "price": 10.06,
+            "quantity": 2706,
+            "orderCount": 2
+          },
+          {
+            "price": 10.05,
+            "quantity": 483,
+            "orderCount": 3
+          }
+        ],
+        "sell": [
+          {
+            "price": 10.12,
+            "quantity": 490,
+            "orderCount": 1
+          },
+          {
+            "price": 10.13,
+            "quantity": 4097,
+            "orderCount": 3
+          },
+          {
+            "price": 10.14,
+            "quantity": 4930,
+            "orderCount": 3
+          },
+          {
+            "price": 10.15,
+            "quantity": 531,
+            "orderCount": 2
+          },
+          {
+            "price": 10.16,
+            "quantity": 8257,
+            "orderCount": 3
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 510,
+      "last_trade_time": 1784781320,
+      "low_trade_range": null,
+      "last_price": 10.09,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 345148,
+      "total_sell_quantity": 531799,
+      "volume": 55761,
+      "week_52_high": 23.56,
+      "week_52_low": 8.82
+    }
   },
   {
     "stock_id": "ABLBL",
@@ -244,7 +1846,96 @@
     "series": "EQ",
     "buy_allowed": 1,
     "sell_allowed": 1,
-    "is_intraday": 1
+    "is_intraday": 1,
+    "last_quote": {
+      "average_price": null,
+      "bid_quantity": null,
+      "bid_price": null,
+      "day_change": 0.030000000000001137,
+      "day_change_perc": 0.031979533098817965,
+      "upper_circuit_limit": 112.57,
+      "lower_circuit_limit": 75.05,
+      "ohlc": {
+        "open": 93.56,
+        "high": 93.91,
+        "low": 93.1,
+        "close": 93.81
+      },
+      "depth": {
+        "buy": [
+          {
+            "price": 93.77,
+            "quantity": 83,
+            "orderCount": 4
+          },
+          {
+            "price": 93.76,
+            "quantity": 91,
+            "orderCount": 2
+          },
+          {
+            "price": 93.75,
+            "quantity": 7,
+            "orderCount": 1
+          },
+          {
+            "price": 93.73,
+            "quantity": 64,
+            "orderCount": 3
+          },
+          {
+            "price": 93.72,
+            "quantity": 99,
+            "orderCount": 3
+          }
+        ],
+        "sell": [
+          {
+            "price": 93.84,
+            "quantity": 85,
+            "orderCount": 1
+          },
+          {
+            "price": 93.85,
+            "quantity": 400,
+            "orderCount": 1
+          },
+          {
+            "price": 93.88,
+            "quantity": 26,
+            "orderCount": 1
+          },
+          {
+            "price": 93.9,
+            "quantity": 7,
+            "orderCount": 1
+          },
+          {
+            "price": 93.91,
+            "quantity": 4,
+            "orderCount": 1
+          }
+        ]
+      },
+      "high_trade_range": null,
+      "implied_volatility": null,
+      "last_trade_quantity": 13,
+      "last_trade_time": 1784781446,
+      "low_trade_range": null,
+      "last_price": 93.84,
+      "market_cap": null,
+      "offer_price": null,
+      "offer_quantity": null,
+      "oi_day_change": 0.0,
+      "oi_day_change_percentage": 0.0,
+      "open_interest": null,
+      "previous_open_interest": null,
+      "total_buy_quantity": 160544,
+      "total_sell_quantity": 168753,
+      "volume": 41157,
+      "week_52_high": 154.4,
+      "week_52_low": 87.91
+    }
   },
   {
     "stock_id": "ABREL",
