@@ -1,6 +1,8 @@
 import argparse
 import json
 import re
+import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -436,8 +438,60 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def clean_old_downloads(download_dir: Path, keep_reports: bool = True) -> int:
+    """Remove yesterday's equity PDFs; optionally keep regulatory REPORT_* files."""
+    if not download_dir.exists():
+        return 0
+    
+    deleted_count = 0
+    for pdf_file in download_dir.glob("*.pdf"):
+        # Keep REPORT_* files if keep_reports=True
+        if keep_reports and pdf_file.name.startswith("REPORT_"):
+            continue
+        
+        try:
+            pdf_file.unlink()
+            print(f"[nse_postclose_scraper] Cleaned: {pdf_file.name}")
+            deleted_count += 1
+        except Exception as e:
+            print(f"[nse_postclose_scraper] Error cleaning {pdf_file.name}: {e}")
+    
+    return deleted_count
+
+
+def run_news_analyzer() -> int:
+    """Execute nse_news_analyzer.py to extract PDFs for analysis."""
+    print("\n[nse_postclose_scraper] Starting PDF extraction for analysis...")
+    try:
+        result = subprocess.run(
+            [sys.executable, "nse_news_analyzer.py"],
+            cwd=Path(__file__).resolve().parent,
+            capture_output=False,
+            timeout=60
+        )
+        if result.returncode == 0:
+            print("[nse_postclose_scraper] PDF extraction completed\n")
+            return 0
+        else:
+            print(f"[nse_postclose_scraper] PDF extraction failed (exit code {result.returncode})\n")
+            return 1
+    except subprocess.TimeoutExpired:
+        print("[nse_postclose_scraper] PDF extraction timeout\n")
+        return 1
+    except Exception as e:
+        print(f"[nse_postclose_scraper] PDF extraction error: {e}\n")
+        return 1
+
+
 def main() -> int:
     args = build_parser().parse_args()
+
+    download_dir = Path(args.download_dir)
+    
+    # Step 1: Clean old downloads
+    print("[nse_postclose_scraper] Cleaning old downloads...")
+    cleaned = clean_old_downloads(download_dir, keep_reports=True)
+    print(f"[nse_postclose_scraper] Removed {cleaned} old PDF files\n")
 
     try:
         target_date = datetime.strptime(args.target_date, "%Y-%m-%d").date()
@@ -479,7 +533,11 @@ def main() -> int:
     print(f"[nse_postclose_scraper] Reports downloaded: {result['report_download_count']}")
     print(f"[nse_postclose_scraper] Failures logged: {len(result['failures'])}")
     print(f"[nse_postclose_scraper] Symbols file: {symbols_output}")
-    return 0
+    
+    # Step 2: Extract PDFs for analysis
+    extract_result = run_news_analyzer()
+    
+    return extract_result
 
 
 if __name__ == "__main__":
