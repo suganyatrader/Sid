@@ -24,6 +24,21 @@ DEFAULT_INTRADAY_SYMBOLS = [
 ]
 
 
+STANDARD_FIELDS = [
+    'stock_id',
+    'symbol',
+    'exchange',
+    'groww_symbol',
+    'active_for_intraday',
+    'discovery_source',
+    'instrument_type',
+    'series',
+    'buy_allowed',
+    'sell_allowed',
+    'is_intraday',
+]
+
+
 def build_groww_symbol(
     exchange: str,
     trading_symbol: str,
@@ -285,6 +300,77 @@ def update_all_stock_identifiers(
     return results
 
 
+def normalize_stock_entry(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """Normalize a single stock entry to the standard format."""
+    normalized = {}
+    
+    for field in STANDARD_FIELDS:
+        if field in entry:
+            normalized[field] = entry[field]
+        else:
+            # Provide sensible defaults for missing fields
+            if field == 'active_for_intraday':
+                normalized[field] = entry.get('is_intraday', 0) == 1
+            elif field == 'discovery_source':
+                normalized[field] = 'manual'
+            elif field == 'instrument_type':
+                normalized[field] = 'EQ'
+            elif field == 'series':
+                normalized[field] = 'EQ'
+            elif field == 'buy_allowed':
+                normalized[field] = 1
+            elif field == 'sell_allowed':
+                normalized[field] = 1
+            elif field == 'is_intraday':
+                normalized[field] = 1
+            elif field == 'exchange':
+                normalized[field] = 'NSE'
+            else:
+                # For stock_id and symbol, try to derive from existing data
+                if field == 'stock_id' and 'stock_id' not in entry:
+                    normalized[field] = entry.get('symbol', 'UNKNOWN').upper()
+                elif field == 'symbol' and 'symbol' not in entry:
+                    normalized[field] = entry.get('stock_id', 'UNKNOWN')
+                elif field == 'groww_symbol' and 'groww_symbol' not in entry:
+                    symbol = entry.get('symbol') or entry.get('stock_id', 'UNKNOWN')
+                    exchange = entry.get('exchange', 'NSE')
+                    normalized[field] = f"{exchange}-{symbol}"
+    
+    return normalized
+
+
+def normalize_all_stock_identifiers(
+    stock_identifiers_path: Optional[Path] = None,
+) -> bool:
+    """Normalize all stock entries to the standard format."""
+    target = stock_identifiers_path or STOCK_IDENTIFIERS_FILE
+    
+    if not target.exists():
+        print(f"File not found: {target}")
+        return False
+    
+    print(f'Loading {target}...')
+    with target.open('r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    if not isinstance(data, list):
+        print("Error: stock_identifiers.json should be a JSON array")
+        return False
+    
+    print(f'Normalizing {len(data)} entries...')
+    normalized_data = [normalize_stock_entry(entry) for entry in data]
+    
+    # Sort by stock_id for consistency
+    normalized_data.sort(key=lambda x: x.get('stock_id', ''))
+    
+    print(f'Saving normalized data to {target}...')
+    with target.open('w', encoding='utf-8') as f:
+        json.dump(normalized_data, f, indent=2, ensure_ascii=False)
+    
+    print(f'✓ Successfully normalized {len(normalized_data)} stock entries')
+    return True
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description='Update stock identifiers with Groww symbol format')
     parser.add_argument('--stock-id', help='Update specific stock ID')
@@ -292,10 +378,15 @@ def main() -> None:
     parser.add_argument('--file', type=Path, help='Path to stock identifiers JSON file')
     parser.add_argument('--token', help='Groww API access token')
     parser.add_argument('--discover', action='store_true', help='Discover NSE intraday-ready symbols and populate the JSON file')
+    parser.add_argument('--normalize', action='store_true', help='Normalize all stock entries to standard format')
     parser.add_argument('--limit', type=int, default=None, help='Optional limit for discovery candidates')
 
     args = parser.parse_args()
     stock_identifiers_path = args.file or STOCK_IDENTIFIERS_FILE
+
+    if args.normalize:
+        success = normalize_all_stock_identifiers(stock_identifiers_path)
+        exit(0 if success else 1)
 
     if args.discover:
         results = discover_nse_intraday_symbols(args.exchange, args.token, stock_identifiers_path, args.limit)

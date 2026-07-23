@@ -22,7 +22,20 @@ except ImportError:
     import pdfplumber
 
 
-def extract_pdf_texts(download_dir: str) -> dict:
+def load_tradable_symbols(stock_identifiers_path: str) -> set:
+    """Load set of tradable intraday symbols from stock_identifiers.json."""
+    try:
+        with open(stock_identifiers_path, 'r') as f:
+            identifiers = json.load(f)
+        
+        tradable = {item['symbol'] for item in identifiers if isinstance(item, dict) and 'symbol' in item}
+        return tradable
+    except Exception as e:
+        print(f"⚠ Warning: Could not load stock identifiers: {e}")
+        return set()
+
+
+def extract_pdf_texts(download_dir: str, tradable_symbols: set) -> dict:
     """Extract text from all PDFs in directory, keyed by symbol."""
     pdf_dir = Path(download_dir)
     pdf_files = list(pdf_dir.glob("*.pdf"))
@@ -48,9 +61,11 @@ def extract_pdf_texts(download_dir: str) -> dict:
                 if text.strip():
                     extracted[symbol] = {
                         'filename': pdf_file.name,
-                        'text': text[:5000]  # Limit to first 5000 chars per file
+                        'text': text[:5000],  # Limit to first 5000 chars per file
+                        'is_tradable_intraday': symbol in tradable_symbols
                     }
-                    print(f"✓ Extracted: {symbol} from {pdf_file.name}")
+                    status = "✓" if symbol in tradable_symbols else "⚠"
+                    print(f"{status} Extracted: {symbol} from {pdf_file.name} (tradable: {symbol in tradable_symbols})")
         except Exception as e:
             print(f"✗ Error reading {pdf_file.name}: {e}")
     
@@ -63,11 +78,16 @@ def build_analysis_data(extracts: dict) -> str:
     output = "NSE POST-CLOSE EQUITY ANNOUNCEMENTS - ANALYSIS DATA\n"
     output += f"Generated: {datetime.now().isoformat()}\n"
     output += f"Total Documents: {len(extracts)}\n"
+    
+    tradable_count = sum(1 for data in extracts.values() if data.get('is_tradable_intraday', False))
+    output += f"Tradable Intraday: {tradable_count}/{len(extracts)}\n"
     output += "=" * 80 + "\n\n"
     
     for symbol, data in extracts.items():
         output += f"SYMBOL: {symbol}\n"
         output += f"FILE: {data['filename']}\n"
+        tradable_label = "✓ TRADABLE" if data.get('is_tradable_intraday', False) else "✗ NOT TRADABLE"
+        output += f"INTRADAY TRADABLE: {tradable_label}\n"
         output += "-" * 80 + "\n"
         output += data['text'] + "\n"
         output += "=" * 80 + "\n\n"
