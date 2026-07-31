@@ -97,16 +97,26 @@ def build_analysis_data(extracts: dict) -> str:
 
 def analyze_with_copilot():
     """Extract PDFs and prepare for Copilot analysis."""
-    
-    download_dir = "../data/nse_postclose_downloads"
+
+    script_dir = Path(__file__).resolve().parent
+    data_dir = script_dir.parent / "data"
+    download_dir = data_dir / "nse_postclose_downloads"
+
+    stock_identifier_candidates = [
+        script_dir / "stock_identifiers.json",
+        data_dir / "stock_identifiers.json",
+    ]
+    stock_identifiers_path = next((p for p in stock_identifier_candidates if p.exists()), stock_identifier_candidates[0])
+    tradable_symbols = load_tradable_symbols(str(stock_identifiers_path))
     
     print("=" * 80)
     print("NSE Equity Extractor - Preparing Data for Copilot Chat Analysis")
     print("=" * 80)
+    print(f"Loaded tradable symbols: {len(tradable_symbols)}")
     
     # Extract PDFs
     print("\n[1/2] Extracting PDFs from announcements...")
-    extracts = extract_pdf_texts(download_dir)
+    extracts = extract_pdf_texts(str(download_dir), tradable_symbols)
     
     if not extracts:
         print("✗ No PDFs found in", download_dir)
@@ -120,13 +130,13 @@ def analyze_with_copilot():
     today = datetime.now().strftime("%Y-%m-%d")
     
     # Save as JSON
-    json_file = Path("../data") / f"nse_extracts_{today}.json"
+    json_file = data_dir / f"nse_extracts_{today}.json"
     with open(json_file, 'w') as f:
         json.dump(extracts, f, indent=2)
     print(f"✓ Extracts saved to: {json_file}")
     
     # Also save as text for easy copy-paste to chat
-    text_file = Path("../data") / f"nse_extracts_{today}.txt"
+    text_file = data_dir / f"nse_extracts_{today}.txt"
     analysis_data = build_analysis_data(extracts)
     with open(text_file, 'w', encoding='utf-8') as f:
         f.write(analysis_data)
