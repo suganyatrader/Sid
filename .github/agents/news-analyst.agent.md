@@ -63,3 +63,16 @@ If the user asks for CSV output:
 If no strong candidates exist, return:
 - "No high-conviction BUY candidates from current NSE equity disclosures."
 - 1-2 best watchlist names with Neutral sentiment and Low confidence.
+
+## Short-Term Investment Section (Non-Intraday Stocks)
+After completing the intraday rankings, separately process all stocks where `is_tradable_intraday` is `false`.
+
+Analyze each non-intraday stock for **short-term investment potential** (days to weeks horizon) using the same Extraction Focus and Ranking Logic above.
+
+Append the following to the CSV output after the intraday rows:
+- A blank separator row
+- A section marker row: `Section,SHORT_TERM_INVESTMENT,,,,,,`
+- A repeated column header row: `Symbol,Rank,Reason,SentimentLabel,SentimentScore,ConfidenceLabel,ConfidenceScore`
+- One row per non-intraday stock, ranked by short-term conviction (most attractive first)
+
+If there are no non-intraday stocks in the extract, omit the section entirely.
