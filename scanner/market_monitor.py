@@ -12,12 +12,15 @@ from rate_limiter import MultiRateLimiter, DEFAULT_GROWW_QUOTE_RATE_LIMITS
 from scanner import _extract_quote_value, _to_number, detect_momentum, TRADE_LOG_FILE
 
 DEFAULT_WINDOW_MINUTES = 30.0
-DEFAULT_POLL_INTERVAL_SECONDS = 5.0
+DEFAULT_POLL_INTERVAL_SECONDS = 2.0
 DEFAULT_CONFIRMATION_POLLS = 2
 # Absolute buy_qty/sell_qty ratio required to trigger a BUY signal (no warmup needed)
 DEFAULT_BUY_RATIO = 2.5
+# 2% = ₹2,000 target on ₹1,00,000 effective position (₹20k × 5x margin)
+DEFAULT_REVERSAL_THRESHOLD = 0.02
 MAX_WORKERS = 6
-ALL_SIGNAL_NAMES = ['demand_strong', 'demand_vs_supply', 'breakout', 'bullish_vwap', 'volume_spike']
+ALL_SIGNAL_NAMES = ['demand_strong', 'demand_vs_supply', 'breakout', 'bullish_vwap', 'volume_spike', 'price_reversal']
+SELL_SIGNALS = frozenset(['demand_vs_supply', 'price_reversal'])
 
 
 def _log(message: str) -> None:
@@ -34,6 +37,7 @@ class StockState:
     def __init__(self) -> None:
         # First-poll snapshot used as the SELL baseline — identical to exit_monitor logic
         self.benchmark_ratio: Optional[float] = None
+        self.price_high: Optional[float] = None
         self.signal_streaks: Dict[str, int] = {name: 0 for name in ALL_SIGNAL_NAMES}
 
 
@@ -46,6 +50,7 @@ def detect_signals(
     quote: Dict[str, Any],
     state: StockState,
     buy_ratio: float = DEFAULT_BUY_RATIO,
+    reversal_threshold: float = DEFAULT_REVERSAL_THRESHOLD,
 ) -> Dict[str, Any]:
     """Return active signals for one quote reading; updates state in place."""
     price = _to_number(_extract_quote_value(quote, 'ltp', 'last_price', 'price', 'close'))
@@ -79,6 +84,12 @@ def detect_signals(
         for sig in ('breakout', 'bullish_vwap', 'volume_spike'):
             if sig in momentum['signals']:
                 signals.append(sig)
+
+    # SELL: fire when price drops reversal_threshold below the rolling session high
+    if state.price_high is None or price > state.price_high:
+        state.price_high = price
+    elif state.price_high > 0 and price < state.price_high * (1 - reversal_threshold):
+        signals.append('price_reversal')
 
     return {
         'price': price,
@@ -146,6 +157,7 @@ def run_market_monitor(
     poll_interval_seconds: float = DEFAULT_POLL_INTERVAL_SECONDS,
     confirmation_polls: int = DEFAULT_CONFIRMATION_POLLS,
     buy_ratio: float = DEFAULT_BUY_RATIO,
+    reversal_threshold: float = DEFAULT_REVERSAL_THRESHOLD,
     fetch_quotes_fn: Optional[Callable[[], Dict[str, Optional[Dict[str, Any]]]]] = None,
     sleep_fn: Callable[[float], None] = time.sleep,
     now_fn: Callable[[], float] = time.monotonic,
@@ -176,7 +188,7 @@ def run_market_monitor(
                 continue
 
             state = states[symbol]
-            reading = detect_signals(symbol, quote, state, buy_ratio)
+            reading = detect_signals(symbol, quote, state, buy_ratio, reversal_threshold)
             price = reading['price']
             if price is None:
                 continue
@@ -194,7 +206,8 @@ def run_market_monitor(
                     confirmed.append(name)
 
             if confirmed:
-                direction = 'BUY' if any(s in confirmed for s in ('demand_strong', 'breakout', 'bullish_vwap', 'volume_spike')) else 'SELL'
+                # SELL overrides BUY when any SELL signal is confirmed
+                direction = 'SELL' if any(s in SELL_SIGNALS for s in confirmed) else 'BUY'
                 buy_pct = reading['buy_order_percentage']
                 pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
                 _log(f"ALERT {direction} {symbol}: price={price}{pct_note} signals={', '.join(confirmed)}")
@@ -245,6 +258,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--poll-interval', type=float, default=DEFAULT_POLL_INTERVAL_SECONDS)
     parser.add_argument('--confirmation-polls', type=int, default=DEFAULT_CONFIRMATION_POLLS)
     parser.add_argument('--buy-ratio', type=float, default=DEFAULT_BUY_RATIO, help='Minimum buy_qty/sell_qty ratio to trigger a BUY signal (default: 2.5)')
+    parser.add_argument('--reversal-threshold', type=float, default=DEFAULT_REVERSAL_THRESHOLD, help='%% drop from rolling price high to fire price_reversal SELL (default: 0.02 = 2%%)')
     return parser
 
 
@@ -259,6 +273,7 @@ def main() -> int:
         poll_interval_seconds=args.poll_interval,
         confirmation_polls=args.confirmation_polls,
         buy_ratio=args.buy_ratio,
+        reversal_threshold=args.reversal_threshold,
     )
 
 

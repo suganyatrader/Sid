@@ -141,9 +141,9 @@ def detect_momentum(stock_id: str, quote: Dict[str, Any]) -> Optional[Dict[str, 
     ) or 0.0
 
     signals = []
-    if previous_close and price > previous_close * 1.01:
+    if previous_close and price > previous_close * 1.02:
         signals.append('breakout')
-    if vwap and price > vwap:
+    if vwap and price > vwap * 1.005:
         signals.append('bullish_vwap')
     if previous_volume and volume and volume > previous_volume * 1.5:
         signals.append('volume_spike')
