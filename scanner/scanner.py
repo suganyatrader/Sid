@@ -1,3 +1,6 @@
+# Live intraday momentum scanner: fetches NSE quotes concurrently, scores stocks via
+# detect_momentum() (breakout/bullish_vwap/volume_spike), ranks them, and appends
+# simulated BUY trades to data/trade_logs.csv.
 import argparse
 import csv
 import datetime

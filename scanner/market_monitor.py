@@ -1,4 +1,7 @@
-"""Continuous multi-stock bidirectional monitor — no entry price required."""
+# Continuous multi-stock BUY/SELL monitor: polls live order-book and price data at a
+# configurable interval, fires confirmed signals (demand_strong, breakout, bullish_vwap,
+# volume_spike for BUY; demand_vs_supply, price_reversal for SELL) with streak-based
+# confirmation to suppress noise. Thresholds calibrated for ₹20k×5x margin, ₹2k target.
 import argparse
 import csv
 import time
