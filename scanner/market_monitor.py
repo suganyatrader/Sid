@@ -67,9 +67,11 @@ def detect_signals(
 
     signals: List[str] = []
     buy_pct: Optional[float] = None
+    buy_sell_ratio: Optional[float] = None
 
     if buy_qty and sell_qty and (buy_qty + sell_qty) > 0:
         buy_pct = buy_qty / (buy_qty + sell_qty)
+        buy_sell_ratio = buy_qty / sell_qty
 
         # SELL: exit_monitor logic — snapshot on first poll, fire when buy_pct drops below it
         if state.benchmark_ratio is None:
@@ -78,7 +80,7 @@ def detect_signals(
             signals.append('demand_vs_supply')
 
         # BUY: absolute ratio — fires from poll 1, no warmup needed
-        if sell_qty > 0 and buy_qty / sell_qty > buy_ratio:
+        if buy_sell_ratio > buy_ratio:
             signals.append('demand_strong')
 
     # Layer in price-based momentum signals (all BUY-side)
@@ -94,12 +96,22 @@ def detect_signals(
     elif state.price_high > 0 and price < state.price_high * (1 - reversal_threshold):
         signals.append('price_reversal')
 
+    price_drawdown_pct = (
+        (state.price_high - price) / state.price_high
+        if state.price_high and state.price_high > 0
+        else None
+    )
+
     return {
         'price': price,
         'volume': volume,
         'buy_quantity': buy_qty,
         'sell_quantity': sell_qty,
         'buy_order_percentage': buy_pct,
+        'buy_sell_ratio': buy_sell_ratio,
+        'benchmark_buy_percentage': state.benchmark_ratio,
+        'price_high': state.price_high,
+        'price_drawdown_percentage': price_drawdown_pct,
         'signals': signals,
     }
 
@@ -199,6 +211,29 @@ def run_market_monitor(
             active_signals = reading['signals']
             confirmed: List[str] = []
 
+            short_trend_parts = []
+            buy_pct = reading['buy_order_percentage']
+            benchmark_pct = reading['benchmark_buy_percentage']
+            buy_sell_ratio = reading['buy_sell_ratio']
+            drawdown_pct = reading['price_drawdown_percentage']
+            price_high = reading['price_high']
+            if buy_sell_ratio is not None:
+                short_trend_parts.append(f'buy_sell_ratio={buy_sell_ratio:.2f}')
+            if buy_pct is not None and benchmark_pct is not None:
+                short_trend_parts.append(
+                    f'buy_pct={buy_pct:.2%} baseline={benchmark_pct:.2%} '
+                    f'delta={(buy_pct - benchmark_pct):+.2%}'
+                )
+            if price_high is not None and drawdown_pct is not None:
+                short_trend_parts.append(
+                    f'high={price_high} drawdown={drawdown_pct:.2%}'
+                )
+            short_trend_note = (
+                f" short_trend: {' | '.join(short_trend_parts)}"
+                if short_trend_parts
+                else ''
+            )
+
             for name in ALL_SIGNAL_NAMES:
                 if name in active_signals:
                     state.signal_streaks[name] += 1
@@ -211,16 +246,18 @@ def run_market_monitor(
             if confirmed:
                 # SELL overrides BUY when any SELL signal is confirmed
                 direction = 'SELL' if any(s in SELL_SIGNALS for s in confirmed) else 'BUY'
-                buy_pct = reading['buy_order_percentage']
                 pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
-                _log(f"ALERT {direction} {symbol}: price={price}{pct_note} signals={', '.join(confirmed)}")
+                _log(
+                    f"ALERT {direction} {symbol}: price={price}{pct_note} "
+                    f"signals={', '.join(confirmed)}{short_trend_note}"
+                )
             else:
                 pending = [
                     f'{n}({state.signal_streaks[n]}/{confirmation_polls})'
                     for n in active_signals
                 ]
                 note = f" pending: {', '.join(pending)}" if pending else ''
-                _log(f'{symbol} holding: price={price}{note}')
+                _log(f'{symbol} holding: price={price}{note}{short_trend_note}')
 
         if now_fn() < deadline:
             sleep_fn(poll_interval_seconds)
