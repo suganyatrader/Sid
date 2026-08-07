@@ -5,6 +5,7 @@
 import argparse
 import csv
 import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
@@ -17,17 +18,66 @@ from scanner import _extract_quote_value, _to_number, detect_momentum, TRADE_LOG
 DEFAULT_WINDOW_MINUTES = 30.0
 DEFAULT_POLL_INTERVAL_SECONDS = 2.0
 DEFAULT_CONFIRMATION_POLLS = 2
-# Absolute buy_qty/sell_qty ratio required to trigger a BUY signal (no warmup needed)
 DEFAULT_BUY_RATIO = 2.5
+# LTP in upper 60% of bid-ask spread → buyer-initiated; lower 40% → seller-initiated
+SPREAD_BUY_THRESHOLD = 0.6
+SPREAD_SELL_THRESHOLD = 0.4
+# 65%+ of top-5 depth value on one side confirms the direction
+DEPTH_IMBALANCE_THRESHOLD = 0.65
+# Price trend: compare LTP to 10 polls ago; 0.1% move required to signal trend
+PRICE_TREND_WINDOW = 10
+PRICE_TREND_MIN_DELTA = 0.001
 # 2% = ₹2,000 target on ₹1,00,000 effective position (₹20k × 5x margin)
 DEFAULT_REVERSAL_THRESHOLD = 0.02
 MAX_WORKERS = 6
-ALL_SIGNAL_NAMES = ['demand_strong', 'demand_vs_supply', 'breakout', 'bullish_vwap', 'volume_spike', 'price_reversal']
-SELL_SIGNALS = frozenset(['demand_vs_supply', 'price_reversal'])
+# Lower weight for breakout/vwap — they are lagging (compare to prev close, not real-time)
+SIGNAL_WEIGHTS: Dict[str, int] = {
+    'demand_strong':    3,
+    'demand_vs_supply': -3,
+    'price_trend_up':   2,
+    'price_trend_down': -2,
+    'breakout':         1,
+    'bullish_vwap':     1,
+    'volume_spike':     1,
+    'price_reversal':   -3,
+}
 
 
 def _log(message: str) -> None:
     print(f'[{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}] [market-monitor] {message}', flush=True)
+
+
+def _extract_depth(quote: Dict[str, Any]) -> Tuple[Optional[float], Optional[float], float, float]:
+    """Return (best_bid, best_ask, bid_depth_value, ask_depth_value) from order book depth."""
+    depth = None
+    if isinstance(quote, dict):
+        depth = quote.get('depth')
+        if not isinstance(depth, dict):
+            for nested_key in ('last_quote', 'quote', 'market'):
+                nested = quote.get(nested_key)
+                if isinstance(nested, dict):
+                    depth = nested.get('depth')
+                    if isinstance(depth, dict):
+                        break
+
+    if not isinstance(depth, dict):
+        return None, None, 0.0, 0.0
+
+    buy_levels = depth.get('buy') or []
+    sell_levels = depth.get('sell') or []
+
+    best_bid = _to_number(buy_levels[0].get('price')) if buy_levels and isinstance(buy_levels[0], dict) else None
+    best_ask = _to_number(sell_levels[0].get('price')) if sell_levels and isinstance(sell_levels[0], dict) else None
+
+    bid_value = sum(
+        (_to_number(lvl.get('price')) or 0) * (_to_number(lvl.get('quantity')) or 0)
+        for lvl in buy_levels if isinstance(lvl, dict)
+    )
+    ask_value = sum(
+        (_to_number(lvl.get('price')) or 0) * (_to_number(lvl.get('quantity')) or 0)
+        for lvl in sell_levels if isinstance(lvl, dict)
+    )
+    return best_bid, best_ask, bid_value, ask_value
 
 
 # ---------------------------------------------------------------------------
@@ -38,10 +88,10 @@ class StockState:
     """Rolling state tracked independently for each symbol."""
 
     def __init__(self) -> None:
-        # First-poll snapshot used as the SELL baseline — identical to exit_monitor logic
-        self.benchmark_ratio: Optional[float] = None
+        self.price_window: deque = deque(maxlen=PRICE_TREND_WINDOW + 1)
         self.price_high: Optional[float] = None
-        self.signal_streaks: Dict[str, int] = {name: 0 for name in ALL_SIGNAL_NAMES}
+        self.bull_streak: int = 0
+        self.bear_streak: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +110,8 @@ def detect_signals(
     if price is None:
         return {'price': None, 'signals': [], 'buy_order_percentage': None}
 
+    state.price_window.append(price)
+
     volume = _to_number(_extract_quote_value(quote, 'volume', 'total_traded_volume', 'total_volume')) or 0.0
 
     buy_qty = _to_number(_extract_quote_value(quote, 'total_buy_quantity', 'bid_quantity'))
@@ -72,16 +124,35 @@ def detect_signals(
     if buy_qty and sell_qty and (buy_qty + sell_qty) > 0:
         buy_pct = buy_qty / (buy_qty + sell_qty)
         buy_sell_ratio = buy_qty / sell_qty
-
-        # SELL: exit_monitor logic — snapshot on first poll, fire when buy_pct drops below it
-        if state.benchmark_ratio is None:
-            state.benchmark_ratio = buy_pct
-        elif buy_pct < state.benchmark_ratio:
-            signals.append('demand_vs_supply')
-
-        # BUY: absolute ratio — fires from poll 1, no warmup needed
+        # Absolute ratio fallback — fires even without depth data
         if buy_sell_ratio > buy_ratio:
             signals.append('demand_strong')
+
+    # Order-book positioning: where is LTP relative to the bid-ask spread?
+    best_bid, best_ask, bid_depth_value, ask_depth_value = _extract_depth(quote)
+    spread_position: Optional[float] = None
+    depth_bid_share: Optional[float] = None
+
+    if best_bid is not None and best_ask is not None and best_ask > best_bid:
+        spread = best_ask - best_bid
+        spread_position = (price - best_bid) / spread  # 0=at bid, 1=at ask
+
+        # LTP in upper portion of spread → buyer lifted the ask → buying pressure
+        if spread_position >= SPREAD_BUY_THRESHOLD:
+            if 'demand_strong' not in signals:
+                signals.append('demand_strong')
+        # LTP in lower portion of spread → seller hit the bid → selling pressure
+        elif spread_position <= SPREAD_SELL_THRESHOLD:
+            signals.append('demand_vs_supply')
+
+        total_depth = bid_depth_value + ask_depth_value
+        if total_depth > 0:
+            depth_bid_share = bid_depth_value / total_depth
+            # Confirm direction with depth value imbalance
+            if depth_bid_share > DEPTH_IMBALANCE_THRESHOLD and 'demand_strong' not in signals:
+                signals.append('demand_strong')
+            elif depth_bid_share < (1 - DEPTH_IMBALANCE_THRESHOLD) and 'demand_vs_supply' not in signals:
+                signals.append('demand_vs_supply')
 
     # Layer in price-based momentum signals (all BUY-side)
     momentum = detect_momentum(stock_id, quote)
@@ -96,6 +167,16 @@ def detect_signals(
     elif state.price_high > 0 and price < state.price_high * (1 - reversal_threshold):
         signals.append('price_reversal')
 
+    # Short-term price trend: compare current price to PRICE_TREND_WINDOW polls ago
+    if len(state.price_window) > PRICE_TREND_WINDOW:
+        ref_price = state.price_window[0]
+        if ref_price and ref_price > 0:
+            delta = (price - ref_price) / ref_price
+            if delta > PRICE_TREND_MIN_DELTA:
+                signals.append('price_trend_up')
+            elif delta < -PRICE_TREND_MIN_DELTA:
+                signals.append('price_trend_down')
+
     price_drawdown_pct = (
         (state.price_high - price) / state.price_high
         if state.price_high and state.price_high > 0
@@ -109,7 +190,10 @@ def detect_signals(
         'sell_quantity': sell_qty,
         'buy_order_percentage': buy_pct,
         'buy_sell_ratio': buy_sell_ratio,
-        'benchmark_buy_percentage': state.benchmark_ratio,
+        'best_bid': best_bid,
+        'best_ask': best_ask,
+        'spread_position': spread_position,
+        'depth_bid_share': depth_bid_share,
         'price_high': state.price_high,
         'price_drawdown_percentage': price_drawdown_pct,
         'signals': signals,
@@ -209,55 +293,63 @@ def run_market_monitor(
                 continue
 
             active_signals = reading['signals']
-            confirmed: List[str] = []
 
             short_trend_parts = []
             buy_pct = reading['buy_order_percentage']
-            benchmark_pct = reading['benchmark_buy_percentage']
             buy_sell_ratio = reading['buy_sell_ratio']
+            best_bid = reading['best_bid']
+            best_ask = reading['best_ask']
+            spread_position = reading['spread_position']
+            depth_bid_share = reading['depth_bid_share']
             drawdown_pct = reading['price_drawdown_percentage']
             price_high = reading['price_high']
+            if best_bid is not None and best_ask is not None:
+                spread = best_ask - best_bid
+                pos_note = f' pos={spread_position:.2f}' if spread_position is not None else ''
+                short_trend_parts.append(f'bid={best_bid} ask={best_ask} spread={spread:.2f}{pos_note}')
+            if depth_bid_share is not None:
+                short_trend_parts.append(f'depth_bid={depth_bid_share:.0%}')
             if buy_sell_ratio is not None:
                 short_trend_parts.append(f'buy_sell_ratio={buy_sell_ratio:.2f}')
-            if buy_pct is not None and benchmark_pct is not None:
-                short_trend_parts.append(
-                    f'buy_pct={buy_pct:.2%} baseline={benchmark_pct:.2%} '
-                    f'delta={(buy_pct - benchmark_pct):+.2%}'
-                )
-            if price_high is not None and drawdown_pct is not None:
-                short_trend_parts.append(
-                    f'high={price_high} drawdown={drawdown_pct:.2%}'
-                )
+            if drawdown_pct is not None and price_high is not None:
+                short_trend_parts.append(f'high={price_high} drawdown={drawdown_pct:.2%}')
             short_trend_note = (
                 f" short_trend: {' | '.join(short_trend_parts)}"
                 if short_trend_parts
                 else ''
             )
 
-            for name in ALL_SIGNAL_NAMES:
-                if name in active_signals:
-                    state.signal_streaks[name] += 1
-                else:
-                    state.signal_streaks[name] = 0
+            # Weighted score: positive = bullish, negative = bearish
+            score = sum(SIGNAL_WEIGHTS.get(s, 0) for s in active_signals)
 
-                if state.signal_streaks[name] >= confirmation_polls:
-                    confirmed.append(name)
+            if score > 0:
+                state.bull_streak += 1
+                state.bear_streak = 0
+            elif score < 0:
+                state.bear_streak += 1
+                state.bull_streak = 0
+            else:
+                state.bull_streak = 0
+                state.bear_streak = 0
 
-            if confirmed:
-                # SELL overrides BUY when any SELL signal is confirmed
-                direction = 'SELL' if any(s in SELL_SIGNALS for s in confirmed) else 'BUY'
+            score_note = f' score={score:+d}'
+            if state.bull_streak >= confirmation_polls:
                 pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
                 _log(
-                    f"ALERT {direction} {symbol}: price={price}{pct_note} "
-                    f"signals={', '.join(confirmed)}{short_trend_note}"
+                    f"ALERT BUY {symbol}: price={price}{pct_note}{score_note} "
+                    f"signals={', '.join(active_signals)}{short_trend_note}"
+                )
+            elif state.bear_streak >= confirmation_polls:
+                pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
+                _log(
+                    f"ALERT SELL {symbol}: price={price}{pct_note}{score_note} "
+                    f"signals={', '.join(active_signals)}{short_trend_note}"
                 )
             else:
-                pending = [
-                    f'{n}({state.signal_streaks[n]}/{confirmation_polls})'
-                    for n in active_signals
-                ]
-                note = f" pending: {', '.join(pending)}" if pending else ''
-                _log(f'{symbol} holding: price={price}{note}{short_trend_note}')
+                pending_streak = state.bull_streak if score > 0 else state.bear_streak
+                direction_label = 'BUY' if score > 0 else 'SELL' if score < 0 else 'NEUTRAL'
+                note = f" pending {direction_label}({pending_streak}/{confirmation_polls}): {', '.join(active_signals)}" if active_signals else ''
+                _log(f'{symbol} holding: price={price}{score_note}{note}{short_trend_note}')
 
         if now_fn() < deadline:
             sleep_fn(poll_interval_seconds)
