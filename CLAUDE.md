@@ -55,3 +55,16 @@ This is a file-based (no DB, no server) intraday trading utility for NSE stocks,
 - **`exit_monitor.py`** — exit signal monitoring for simulated positions.
 
 `data/` holds all persisted state: `stock_identifiers.json` (master symbol list + cached quotes) and `trade_logs.csv` (append-only simulated trade history, auto-incrementing `trade_id`).
+
+## Data Lifecycle Principle
+
+**Every file that is downloaded must be consumed by a downstream process. If a file is downloaded but never read, it is dead weight and must be flagged immediately.**
+
+When reviewing or adding download logic:
+- Trace each downloaded file type to its consumer (a parser, reader, or analysis step).
+- If no consumer exists, either add one or stop downloading the file.
+- Do not assume that because a file is downloaded it is being used — verify the consumer.
+
+Known examples in this repo:
+- `nse_postclose_scraper.py` downloads `REPORT_CM_*` and `REPORT_CD_*` CSVs. Only the CM segment CSVs are relevant for equity analysis. The CD (currency derivatives) files (`REPORT_CD_*`) have no consumer and accumulate as dead weight — stop downloading them or delete them after each run.
+- `nse_news_analyzer.py` consumes `REPORT_CM_*` CSVs (price band changes, series changes, 52W H/L) and equity PDFs; it ignores all other file types in the download directory.

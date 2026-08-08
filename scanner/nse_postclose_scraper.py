@@ -488,24 +488,37 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def clean_old_downloads(download_dir: Path, keep_reports: bool = True) -> int:
-    """Remove yesterday's equity PDFs; optionally keep regulatory REPORT_* files."""
+def clean_old_downloads(download_dir: Path, target_date: date) -> int:
+    """Delete equity PDFs, all REPORT_CD_* files, and REPORT_CM_* files not matching target_date."""
     if not download_dir.exists():
         return 0
-    
+
+    keep_date_str = target_date.strftime("%Y%m%d")
     deleted_count = 0
-    for pdf_file in download_dir.glob("*.pdf"):
-        # Keep REPORT_* files if keep_reports=True
-        if keep_reports and pdf_file.name.startswith("REPORT_"):
+
+    for f in download_dir.iterdir():
+        if not f.is_file():
             continue
-        
-        try:
-            pdf_file.unlink()
-            print(f"[nse_postclose_scraper] Cleaned: {pdf_file.name}")
-            deleted_count += 1
-        except Exception as e:
-            print(f"[nse_postclose_scraper] Error cleaning {pdf_file.name}: {e}")
-    
+        name = f.name
+
+        if name.startswith("REPORT_CD_"):
+            # CD segment (currency derivatives) has no consumer — always delete
+            should_delete = True
+        elif name.startswith("REPORT_"):
+            # Keep only the CM (and other) report files matching today's target date
+            should_delete = keep_date_str not in name
+        else:
+            # Equity PDFs from corporate announcements
+            should_delete = name.endswith(".pdf")
+
+        if should_delete:
+            try:
+                f.unlink()
+                print(f"[nse_postclose_scraper] Cleaned: {name}")
+                deleted_count += 1
+            except Exception as e:
+                print(f"[nse_postclose_scraper] Error cleaning {name}: {e}")
+
     return deleted_count
 
 
@@ -536,19 +549,17 @@ def run_news_analyzer() -> int:
 def main() -> int:
     args = build_parser().parse_args()
 
-    download_dir = Path(args.download_dir)
-    
-    # Step 1: Clean old downloads
-    print("[nse_postclose_scraper] Cleaning old downloads...")
-    cleaned = clean_old_downloads(download_dir, keep_reports=True)
-    print(f"[nse_postclose_scraper] Removed {cleaned} old PDF files\n")
-
     try:
         target_date = datetime.strptime(args.target_date, "%Y-%m-%d").date()
     except ValueError:
         raise SystemExit("Invalid --target-date. Use YYYY-MM-DD.")
 
     download_dir = Path(args.download_dir)
+
+    # Step 1: Clean old downloads
+    print("[nse_postclose_scraper] Cleaning old downloads...")
+    cleaned = clean_old_downloads(download_dir, target_date)
+    print(f"[nse_postclose_scraper] Removed {cleaned} stale files\n")
     failure_log = Path(args.failure_log)
     symbols_output = Path(args.symbols_output)
     summary_output = Path(args.summary_output)
