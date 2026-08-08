@@ -166,7 +166,9 @@ def should_include_record(
             return True
         return False
 
-    fallback_date = target_date - timedelta(days=1)
+    # step back over weekends (Monday → Friday)
+    days_back = 3 if target_date.weekday() == 0 else 1
+    fallback_date = target_date - timedelta(days=days_back)
     for field in source.date_fields:
         parsed = parse_date(record.get(field))
         if parsed == fallback_date:
