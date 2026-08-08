@@ -113,7 +113,7 @@ def parse_date(value: Any) -> Optional[date]:
     if len(parts) >= 3:
         parts[1] = parts[1].title()
         date_fragment = "-".join(parts[:3])
-    for fmt in ("%d-%b-%Y", "%Y-%m-%d", "%d-%m-%Y"):
+    for fmt in ("%d-%b-%Y", "%d-%b-%y", "%Y-%m-%d", "%d-%m-%Y"):
         try:
             return datetime.strptime(date_fragment, fmt).date()
         except ValueError:
@@ -323,12 +323,60 @@ class NsePostCloseScraper:
                         )
 
         report_download_count = self._download_daily_reports(target_date, download_dir)
+        forthcoming_symbols, forthcoming_count = self._scrape_forthcoming_listings(
+            target_date, download_dir, download_only_pdf
+        )
+        symbols |= forthcoming_symbols
         return {
             "symbols": sorted(symbols),
             "source_counts": source_summaries,
             "report_download_count": report_download_count,
+            "forthcoming_count": forthcoming_count,
             "failures": self.failures,
         }
+
+    def _scrape_forthcoming_listings(
+        self,
+        target_date: date,
+        download_dir: Path,
+        download_only_pdf: bool = True,
+    ) -> Tuple[Set[str], int]:
+        url = "https://www.nseindia.com/api/new-listing-today?index=ForthListing"
+        referer = "https://www.nseindia.com/market-data/new-stock-exchange-listings-forthcoming"
+        symbols: Set[str] = set()
+        count = 0
+        try:
+            payload = self._request_json(url, referer)
+        except Exception as exc:
+            self.failures.append({"source": "forthcoming_listings", "symbol": "", "url": url, "error": str(exc)})
+            return symbols, count
+
+        rows = payload.get("data") or [] if isinstance(payload, dict) else []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            effective_date = parse_date(row.get("effectiveDate"))
+            if effective_date != target_date:
+                continue
+            symbol = _clean_symbol(row.get("symbol"))
+            if symbol:
+                symbols.add(symbol)
+            attachment_url = str(row.get("shdAttachment") or "").strip()
+            if not attachment_url.startswith("http"):
+                continue
+            if download_only_pdf and not _is_pdf_url(attachment_url):
+                continue
+            dl_sym = symbol or "UNKNOWN"
+            seq = self._download_count_per_symbol.get(dl_sym, 0)
+            ext = _extension_from_url(attachment_url, default=".pdf")
+            filename = _build_filename(dl_sym, effective_date or target_date, seq, ext)
+            try:
+                self._download_file(attachment_url, download_dir / filename, referer)
+                self._download_count_per_symbol[dl_sym] = seq + 1
+                count += 1
+            except Exception as exc:
+                self.failures.append({"source": "forthcoming_listings", "symbol": dl_sym, "url": attachment_url, "error": str(exc)})
+        return symbols, count
 
     def _download_daily_reports(self, target_date: date, download_dir: Path) -> int:
         target_label = target_date.strftime("%d-%b-%Y")
@@ -526,12 +574,14 @@ def main() -> int:
         "symbols": result["symbols"],
         "source_counts": result["source_counts"],
         "report_download_count": result["report_download_count"],
+        "forthcoming_count": result["forthcoming_count"],
         "failure_count": len(result["failures"]),
     }
     summary_output.parent.mkdir(parents=True, exist_ok=True)
     summary_output.write_text(json.dumps(summary_payload, indent=2) + "\n", encoding="utf-8")
 
     print(f"[nse_postclose_scraper] Symbols: {len(result['symbols'])}")
+    print(f"[nse_postclose_scraper] Forthcoming listings on {target_date}: {result['forthcoming_count']}")
     print(f"[nse_postclose_scraper] Reports downloaded: {result['report_download_count']}")
     print(f"[nse_postclose_scraper] Failures logged: {len(result['failures'])}")
     print(f"[nse_postclose_scraper] Symbols file: {symbols_output}")
