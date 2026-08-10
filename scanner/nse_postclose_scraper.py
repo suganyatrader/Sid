@@ -166,12 +166,12 @@ def should_include_record(
             return True
         return False
 
-    # step back over weekends (Monday → Friday)
+    # step back over weekends: Monday covers Fri/Sat/Sun; other days cover just yesterday
     days_back = 3 if target_date.weekday() == 0 else 1
-    fallback_date = target_date - timedelta(days=days_back)
+    fallback_dates = {target_date - timedelta(days=d) for d in range(1, days_back + 1)}
     for field in source.date_fields:
         parsed = parse_date(record.get(field))
-        if parsed == fallback_date:
+        if parsed in fallback_dates:
             return True
     return False
 
@@ -596,11 +596,10 @@ def main() -> int:
     print(f"[nse_postclose_scraper] Reports downloaded: {result['report_download_count']}")
     print(f"[nse_postclose_scraper] Failures logged: {len(result['failures'])}")
     print(f"[nse_postclose_scraper] Symbols file: {symbols_output}")
-    
+
     # Step 2: Extract PDFs for analysis
-    extract_result = run_news_analyzer()
-    
-    return extract_result
+    run_news_analyzer()
+    return 0
 
 
 if __name__ == "__main__":
