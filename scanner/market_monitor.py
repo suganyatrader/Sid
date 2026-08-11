@@ -303,7 +303,7 @@ def run_market_monitor(
             depth_bid_share = reading['depth_bid_share']
             drawdown_pct = reading['price_drawdown_percentage']
             price_high = reading['price_high']
-            if best_bid is not None and best_ask is not None:
+            if best_bid is not None and best_ask is not None and best_bid > 0 and best_ask > 0:
                 spread = best_ask - best_bid
                 pos_note = f' pos={spread_position:.2f}' if spread_position is not None else ''
                 short_trend_parts.append(f'bid={best_bid} ask={best_ask} spread={spread:.2f}{pos_note}')
@@ -311,7 +311,7 @@ def run_market_monitor(
                 short_trend_parts.append(f'depth_bid={depth_bid_share:.0%}')
             if buy_sell_ratio is not None:
                 short_trend_parts.append(f'buy_sell_ratio={buy_sell_ratio:.2f}')
-            if drawdown_pct is not None and price_high is not None:
+            if drawdown_pct is not None and price_high is not None and drawdown_pct > 0.001:
                 short_trend_parts.append(f'high={price_high} drawdown={drawdown_pct:.2%}')
             short_trend_note = (
                 f" short_trend: {' | '.join(short_trend_parts)}"
