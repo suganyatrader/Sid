@@ -5,10 +5,8 @@ Extracts text from NSE post-close PDFs and prepares for Copilot analysis.
 """
 
 import sys
-import os
 import csv
 import json
-import re
 from pathlib import Path
 from datetime import datetime
 
@@ -260,31 +258,12 @@ def analyze_with_copilot():
     
     print(f"\n✓ Ready for analysis!\n")
     print("Next step:")
-    print(f"  1. Share {text_file} or {json_file} with Copilot chat")
-    print("  2. Ask Copilot to analyze and rank these equities for BUY signals")
-    print("  3. Output will be CSV to data/news_rankings_<date>.csv")
+    print(f"  Run @news-analyst agent in Copilot Chat — it will read {json_file} and write data/nse_rankings_<date>.csv")
     
     # Display summary
     print("\nDocuments extracted:")
     for symbol in sorted(extracts.keys()):
         print(f"  • {symbol}")
-
-
-def save_csv_rankings(results: list):
-    """Save ranked results to CSV."""
-    
-    today = datetime.now().strftime("%Y-%m-%d")
-    output_file = Path("../data") / f"news_rankings_{today}.csv"
-    
-    fieldnames = ["Symbol", "Rank", "Reason", "SentimentLabel", "SentimentScore", 
-                  "ConfidenceLabel", "ConfidenceScore"]
-    
-    with open(output_file, 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
-    
-    print(f"\n✓ Rankings saved to: {output_file}")
 
 
 if __name__ == "__main__":
