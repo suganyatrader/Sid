@@ -293,31 +293,8 @@ def run_market_monitor(
                 continue
 
             active_signals = reading['signals']
-
-            short_trend_parts = []
             buy_pct = reading['buy_order_percentage']
             buy_sell_ratio = reading['buy_sell_ratio']
-            best_bid = reading['best_bid']
-            best_ask = reading['best_ask']
-            spread_position = reading['spread_position']
-            depth_bid_share = reading['depth_bid_share']
-            drawdown_pct = reading['price_drawdown_percentage']
-            price_high = reading['price_high']
-            if best_bid is not None and best_ask is not None and best_bid > 0 and best_ask > 0:
-                spread = best_ask - best_bid
-                pos_note = f' pos={spread_position:.2f}' if spread_position is not None else ''
-                short_trend_parts.append(f'bid={best_bid} ask={best_ask} spread={spread:.2f}{pos_note}')
-            if depth_bid_share is not None:
-                short_trend_parts.append(f'depth_bid={depth_bid_share:.0%}')
-            if buy_sell_ratio is not None:
-                short_trend_parts.append(f'buy_sell_ratio={buy_sell_ratio:.2f}')
-            if drawdown_pct is not None and price_high is not None and drawdown_pct > 0.001:
-                short_trend_parts.append(f'high={price_high} drawdown={drawdown_pct:.2%}')
-            short_trend_note = (
-                f" short_trend: {' | '.join(short_trend_parts)}"
-                if short_trend_parts
-                else ''
-            )
 
             # Weighted score: positive = bullish, negative = bearish
             score = sum(SIGNAL_WEIGHTS.get(s, 0) for s in active_signals)
@@ -332,24 +309,20 @@ def run_market_monitor(
                 state.bull_streak = 0
                 state.bear_streak = 0
 
-            score_note = f' score={score:+d}'
+            def _fmt(label: str) -> str:
+                parts = [f'price={price}']
+                if buy_pct is not None:
+                    parts.append(f'buy percent {buy_pct:.2%}')
+                if buy_sell_ratio is not None:
+                    parts.append(f'buy_sell_ratio={buy_sell_ratio:.2f}')
+                return f'{label}: {" and ".join(parts)}'
+
             if state.bull_streak >= confirmation_polls:
-                pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
-                _log(
-                    f"ALERT BUY {symbol}: price={price}{pct_note}{score_note} "
-                    f"signals={', '.join(active_signals)}{short_trend_note}"
-                )
+                _log(_fmt(f'ALERT BUY {symbol}'))
             elif state.bear_streak >= confirmation_polls:
-                pct_note = f' buy_pct={buy_pct:.2%}' if buy_pct is not None else ''
-                _log(
-                    f"ALERT SELL {symbol}: price={price}{pct_note}{score_note} "
-                    f"signals={', '.join(active_signals)}{short_trend_note}"
-                )
+                _log(_fmt(f'ALERT SELL {symbol}'))
             else:
-                pending_streak = state.bull_streak if score > 0 else state.bear_streak
-                direction_label = 'BUY' if score > 0 else 'SELL' if score < 0 else 'NEUTRAL'
-                note = f" pending {direction_label}({pending_streak}/{confirmation_polls}): {', '.join(active_signals)}" if active_signals else ''
-                _log(f'{symbol} holding: price={price}{score_note}{note}{short_trend_note}')
+                _log(_fmt(f'{symbol} holding'))
 
         if now_fn() < deadline:
             sleep_fn(poll_interval_seconds)
